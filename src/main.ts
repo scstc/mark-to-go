@@ -1,114 +1,164 @@
-import {
-	Editor,
-	MarkdownView,
-	MarkdownFileInfo,
-	Modal,
-	Notice,
-	Plugin,
-} from 'obsidian';
-import {
-	DEFAULT_SETTINGS,
-	MyPluginSettings,
-	SampleSettingTab,
-} from './settings';
+import { addIcon, FileSystemAdapter, MarkdownView, Notice, Plugin, removeIcon, TFile } from 'obsidian';
+import icon from '../assets/icon-monochrome.svg';
+import { realpath } from 'node:fs/promises';
+import { isAbsolute, relative, resolve } from 'node:path';
+import { clipboard, remote } from 'electron';
+import { DEFAULT_SETTINGS, MarkToGoSettingTab } from './settings';
+import type { MarkToGoSettings } from './settings';
+import { expandHome } from './piclist';
+import { createCachedUploader } from './cached-uploader';
+import { UPLOAD_CACHE_FILE, UploadCache } from './upload-cache';
+import { saveMarkdown } from './export';
+import { shareMarkdown } from './share';
+import type { Resource } from './share';
+import { ShareResultModal } from './result-modal';
+import { createTranslator, localizeError, resolveLanguage, MarkToGoError } from './i18n';
+import type { LanguageSetting, Translator } from './i18n';
+import type { Command } from 'obsidian';
 
-// Remember to rename these classes and interfaces!
+export default class MarkToGoPlugin extends Plugin {
+	settings: MarkToGoSettings = { ...DEFAULT_SETTINGS };
+	private readonly pending = new Map<string, AbortController>();
+	private stopped = false;
+	private uploadCache!: UploadCache;
+	private shareCommand?: Command;
 
-export default class MyPlugin extends Plugin {
-	settings!: MyPluginSettings;
-
-	async onload() {
-		await this.loadSettings();
-
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (_evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			},
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (
-				editor: Editor,
-				_ctx: MarkdownView | MarkdownFileInfo,
-			) => {
-				editor.replaceSelection('Sample editor command');
-			},
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView =
-					this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
-			},
-		});
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(activeDocument, 'click', (_evt: MouseEvent) => {
-			new Notice('Click');
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(
-			window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000),
-		);
+	get t(): Translator {
+		const appLanguage = document.documentElement.lang || 'en';
+		return createTranslator(resolveLanguage(this.settings.language, appLanguage));
 	}
 
-	onunload() {}
-
-	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<MyPluginSettings>,
-		);
+	async onload(): Promise<void> {
+		this.stopped = false;
+		addIcon(this.manifest.id, icon);
+		this.register(() => removeIcon(this.manifest.id));
+		this.settings = { ...DEFAULT_SETTINGS, ...await this.loadData() as Partial<MarkToGoSettings> };
+		const adapter = this.app.vault.adapter;
+		if (!(adapter instanceof FileSystemAdapter)) throw new MarkToGoError('desktopRequired');
+		this.uploadCache = new UploadCache(resolve(adapter.getBasePath(), UPLOAD_CACHE_FILE));
+		try {
+			await this.uploadCache.initialize();
+		} catch {
+			new Notice(this.t('cacheInitializeFailed'), 12000);
+		}
+		this.addSettingTab(new MarkToGoSettingTab(this.app, this));
+		this.registerEvent(this.app.workspace.on('file-menu', (menu, file) => {
+			if (!(file instanceof TFile) || file.extension.toLowerCase() !== 'md') return;
+			menu.addItem((item) => item.setTitle(this.t('menuAction')).setIcon(this.manifest.id)
+				.setDisabled(this.pending.has(file.path))
+				.onClick(() => this.share(file)));
+		}));
+		this.shareCommand = this.addCommand({
+			id: 'share-note',
+			icon: this.manifest.id,
+			name: this.t('commandAction'),
+			checkCallback: (checking) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file || file.extension.toLowerCase() !== 'md') return false;
+				if (!checking) void this.share(file);
+				return true;
+			},
+		});
 	}
 
-	async saveSettings() {
+	onunload(): void {
+		this.stopped = true;
+		for (const controller of this.pending.values()) controller.abort();
+		this.pending.clear();
+	}
+
+	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
 	}
-}
 
-class SampleModal extends Modal {
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText('Woah!');
+	async setLanguage(language: LanguageSetting): Promise<void> {
+		this.settings.language = language;
+		await this.saveSettings();
+		if (this.shareCommand) this.shareCommand.name = this.manifest.name + ': ' + this.t('commandAction');
 	}
 
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
+	get isSharing(): boolean {
+		return this.pending.size > 0;
+	}
+
+	async clearUploadCache(): Promise<void> {
+		if (this.isSharing) throw new MarkToGoError('clearWhileSharing');
+		await this.uploadCache.clear();
+	}
+
+	private async readLatest(file: TFile): Promise<string> {
+		const active = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (active?.file?.path === file.path) return active.editor.getValue();
+		let content: string | undefined;
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			if (content === undefined && leaf.view instanceof MarkdownView && leaf.view.file?.path === file.path) {
+				content = leaf.view.editor.getValue();
+			}
+		});
+		return content ?? await this.app.vault.cachedRead(file);
+	}
+
+	private async resolveImage(target: string, source: TFile): Promise<Resource | null> {
+		const file = this.app.metadataCache.getFirstLinkpathDest(target, source.path);
+		if (!(file instanceof TFile)) return null;
+		const adapter = this.app.vault.adapter;
+		if (!(adapter instanceof FileSystemAdapter)) throw new MarkToGoError('desktopRequired');
+		let absolute: string;
+		let root: string;
+		try {
+			root = await realpath(adapter.getBasePath());
+			absolute = await realpath(resolve(root, file.path));
+		} catch {
+			return null;
+		}
+		const within = relative(root, absolute);
+		if (within === '..' || within.startsWith('../') || within.startsWith('..\\') || isAbsolute(within)) {
+			throw new MarkToGoError('outsideVault');
+		}
+		return { key: file.path, path: absolute };
+	}
+
+	async share(file: TFile): Promise<void> {
+		const key = file.path;
+		if (this.pending.has(key) || this.stopped) return;
+		const controller = new AbortController();
+		this.pending.set(key, controller);
+		const notice = new Notice(this.t('preparing'), 0);
+		try {
+			const settings = { ...this.settings };
+			const name = file.name;
+			let cacheWarningShown = false;
+			const result = await shareMarkdown(await this.readLatest(file), {
+				translate: this.t,
+				resolve: (target) => this.resolveImage(target, file),
+				openUploader: () => createCachedUploader(settings, this.uploadCache, () => {
+					if (!this.stopped && !cacheWarningShown) {
+						cacheWarningShown = true;
+						new Notice(this.t('cacheWarning'), 12000);
+					}
+				}, controller.signal),
+				copy: (content) => {
+					clipboard.writeText(content);
+					return Promise.resolve();
+				},
+				progress: (message) => { if (!this.stopped) notice.setMessage(message); },
+				signal: controller.signal,
+			});
+			if (!this.stopped) new ShareResultModal(this.app, result, this.t, async () => {
+				const directory = settings.outputDirectory.trim()
+					? expandHome(settings.outputDirectory.trim()) : remote?.app.getPath('downloads');
+				if (!directory) throw new MarkToGoError('downloadsMissing');
+				try {
+					return await saveMarkdown(directory, name, result.content);
+				} catch {
+					throw new MarkToGoError('saveFailed', { uploaded: result.uploaded });
+				}
+			}, Boolean(settings.outputDirectory.trim())).open();
+		} catch (error) {
+			if (!this.stopped) new Notice(localizeError(error, this.t), 12000);
+		} finally {
+			notice.hide();
+			this.pending.delete(key);
+		}
 	}
 }

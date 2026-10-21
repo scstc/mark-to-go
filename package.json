@@ -1,14 +1,16 @@
 {
-	"name": "obsidian-sample-plugin",
-	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"name": "mark-to-go",
+	"version": "26.4.1",
+	"description": "Export shareable Markdown with PicList-hosted images while preserving local notes.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"lint": "eslint ."
+		"lint": "eslint .",
+		"test": "tsx --test tests/*.test.ts",
+		"test:piclist": "tsx --test tests/integration/*.test.ts"
 	},
 	"keywords": [],
 	"license": "0-BSD",
@@ -21,7 +23,11 @@
 		"globals": "^17.6.0",
 		"jiti": "^2.6.1",
 		"obsidian": "latest",
+		"tsx": "^4.23.15",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "^8.59.1"
+	},
+	"dependencies": {
+		"mdast-util-from-markdown": "^2.1.0"
 	}
 }

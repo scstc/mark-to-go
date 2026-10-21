@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.0",
+	"id": "mark-to-go",
+	"name": "MarkToGo",
+	"version": "26.4.1",
 	"minAppVersion": "1.0.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+	"description": "Export shareable Markdown with PicList-hosted images while preserving local notes.",
+	"author": "Simple",
+	"authorUrl": "https://github.com/scstc",
+	"isDesktopOnly": true
 }

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">MarkToGo — MTG monogram</title>
+  <rect width="256" height="256" rx="56" fill="#123b36"/>
+  <g transform="translate(26 26) scale(8.5)" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1.5 16V7.5L4.5 11.5 7.5 7.5V16M10 7.5H15M12.5 7.5V16" stroke="#f2faf7"/>
+    <path d="M22.5 9C21.5 7 17.5 7 17.5 10V13.5C17.5 17 22.5 17 22.5 14V12.5H20.5" stroke="#78e4c4"/>
+  </g>
+</svg>

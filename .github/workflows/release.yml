@@ -1,17 +1,22 @@
-name: Release Obsidian plugin
+name: Release MarkToGo
 
 on:
     push:
         tags:
             - '*'
 
+permissions:
+    contents: read
+
+concurrency:
+    group: release-${{ github.ref }}
+    cancel-in-progress: false
+
 jobs:
-    build:
+    release:
         runs-on: ubuntu-latest
         permissions:
             contents: write
-            id-token: write
-            attestations: write
         steps:
             - uses: actions/checkout@v6
 
@@ -21,30 +26,28 @@ jobs:
                   node-version: 24
                   cache: 'npm'
 
-            - name: Build plugin
+            - name: Validate release version
               run: |
-                  npm ci
-                  npm run build
-
-            - name: Check for optional styles
-              id: styles
-              run: |
-                  [ -f styles.css ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
-
-            - name: Attest build provenance
-              uses: actions/attest@v4
-              with:
-                  subject-path: |
-                      main.js
-                      ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
-
-            - name: Create release
+                  node --input-type=module <<'NODE'
+                  import assert from 'node:assert/strict';
+                  import { readFileSync } from 'node:fs';
+                  const json = path => JSON.parse(readFileSync(path, 'utf8'));
+                  const manifest = json('manifest.json');
+                  assert.match(manifest.version, /^\d{2}\.[1-4]\.[1-9]\d*$/);
+                  assert.equal(process.env.GITHUB_REF_NAME, manifest.version, 'Tag must match manifest version without a v prefix');
+                  assert.equal(json('package.json').version, manifest.version);
+                  assert.equal(json('package-lock.json').version, manifest.version);
+                  assert.equal(json('versions.json')[manifest.version], manifest.minAppVersion);
+                  NODE
+            - run: npm ci
+            - run: npm test
+            - run: npm run lint
+            - run: npm run build
+            - name: Publish release assets
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GH_TOKEN: ${{ github.token }}
               run: |
-                  tag="${GITHUB_REF#refs/tags/}"
-
-                  gh release create "$tag" \
-                    --title="$tag" \
-                    --draft \
-                    main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
+                  assets=(main.js manifest.json)
+                  if [ -f styles.css ]; then assets+=(styles.css); fi
+                  gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
+                    --verify-tag --title "MarkToGo $GITHUB_REF_NAME" --generate-notes

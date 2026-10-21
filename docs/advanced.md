@@ -130,7 +130,7 @@ The color MTG icon is `assets/icon.svg`, with a 512-pixel PNG at `assets/icon.pn
 
 ## Roadmap and limitations
 
-- Test macOS, Linux, additional PicList plugins, and more real cloud providers.
+- Test macOS, Linux, and additional PicList plugins.
 - Support export destinations without hard-link capability.
 - Export Excalidraw and Mermaid directly as images.
 - Support HTML images and additional attachment types.

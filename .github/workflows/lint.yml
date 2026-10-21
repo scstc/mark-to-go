@@ -1,6 +1,7 @@
 name: Node.js build
 
 on:
+    workflow_dispatch:
     push:
         branches: ['**']
     pull_request:

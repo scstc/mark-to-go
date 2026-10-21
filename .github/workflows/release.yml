@@ -1,6 +1,12 @@
 name: Release MarkToGo
 
 on:
+    workflow_dispatch:
+        inputs:
+            tag:
+                description: Existing version tag to build and publish
+                required: true
+                type: string
     push:
         tags:
             - '*'
@@ -9,7 +15,7 @@ permissions:
     contents: read
 
 concurrency:
-    group: release-${{ github.ref }}
+    group: release-${{ inputs.tag || github.ref_name }}
     cancel-in-progress: false
 
 jobs:
@@ -19,6 +25,8 @@ jobs:
             contents: write
         steps:
             - uses: actions/checkout@v6
+              with:
+                  ref: ${{ inputs.tag || github.ref }}
 
             - name: Use Node.js
               uses: actions/setup-node@v6
@@ -27,6 +35,8 @@ jobs:
                   cache: 'npm'
 
             - name: Validate release version
+              env:
+                  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
               run: |
                   node --input-type=module <<'NODE'
                   import assert from 'node:assert/strict';
@@ -34,7 +44,7 @@ jobs:
                   const json = path => JSON.parse(readFileSync(path, 'utf8'));
                   const manifest = json('manifest.json');
                   assert.match(manifest.version, /^\d{2}\.[1-4]\.[1-9]\d*$/);
-                  assert.equal(process.env.GITHUB_REF_NAME, manifest.version, 'Tag must match manifest version without a v prefix');
+                  assert.equal(process.env.RELEASE_TAG, manifest.version, 'Tag must match manifest version without a v prefix');
                   assert.equal(json('package.json').version, manifest.version);
                   assert.equal(json('package-lock.json').version, manifest.version);
                   assert.equal(json('versions.json')[manifest.version], manifest.minAppVersion);
@@ -46,8 +56,9 @@ jobs:
             - name: Publish release assets
               env:
                   GH_TOKEN: ${{ github.token }}
+                  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
               run: |
                   assets=(main.js manifest.json)
                   if [ -f styles.css ]; then assets+=(styles.css); fi
-                  gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
-                    --verify-tag --title "MarkToGo $GITHUB_REF_NAME" --generate-notes
+                  gh release create "$RELEASE_TAG" "${assets[@]}" \
+                    --verify-tag --title "MarkToGo $RELEASE_TAG" --generate-notes

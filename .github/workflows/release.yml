@@ -2,11 +2,6 @@ name: Release MarkToGo
 
 on:
     workflow_dispatch:
-        inputs:
-            tag:
-                description: Existing version tag to build and publish
-                required: true
-                type: string
     push:
         tags:
             - '*'
@@ -15,7 +10,7 @@ permissions:
     contents: read
 
 concurrency:
-    group: release-${{ inputs.tag || github.ref_name }}
+    group: release-${{ github.ref_name }}
     cancel-in-progress: false
 
 jobs:
@@ -23,10 +18,10 @@ jobs:
         runs-on: ubuntu-latest
         permissions:
             contents: write
+            id-token: write
+            attestations: write
         steps:
             - uses: actions/checkout@v6
-              with:
-                  ref: ${{ inputs.tag || github.ref }}
 
             - name: Use Node.js
               uses: actions/setup-node@v6
@@ -36,7 +31,7 @@ jobs:
 
             - name: Validate release version
               env:
-                  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+                  RELEASE_TAG: ${{ github.ref_name }}
               run: |
                   node --input-type=module <<'NODE'
                   import assert from 'node:assert/strict';
@@ -53,10 +48,16 @@ jobs:
             - run: npm test
             - run: npm run lint
             - run: npm run build
+            - name: Attest release asset provenance
+              uses: actions/attest@v4
+              with:
+                  subject-path: |
+                      main.js
+                      manifest.json
             - name: Publish release assets
               env:
                   GH_TOKEN: ${{ github.token }}
-                  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+                  RELEASE_TAG: ${{ github.ref_name }}
               run: |
                   assets=(main.js manifest.json)
                   if [ -f styles.css ]; then assets+=(styles.css); fi

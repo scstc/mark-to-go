@@ -1,7 +1,7 @@
 {
 	"id": "mark-to-go",
 	"name": "MarkToGo",
-	"version": "26.4.1",
+	"version": "26.4.2",
 	"minAppVersion": "1.0.0",
 	"description": "Export shareable Markdown with PicList-hosted images while preserving local notes.",
 	"author": "Simple",

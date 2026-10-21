@@ -10,7 +10,7 @@ Export portable Markdown from Obsidian with images hosted through your local Pic
 
 为 Obsidian 笔记生成可直接分享的 Markdown：右键选择 **MarkToGo**，通过本机 PicList CLI 上传图片和 SVG，替换分享版中的资源地址，并复制全文到剪贴板。需要本地文件时，再从结果弹窗点击保存。
 
-当前版本 `26.4.2`，已实现首版流程，并在 Windows / Obsidian 1.14.4 / PicList-Core 3.0.2 上使用合成笔记和本地图床完成验证。
+当前版本 `26.4.2`。真实图床分享流程已在 Windows / Obsidian 1.14.4 / PicList-Core 3.0.2 环境下完成实际使用验证。
 
 ## 版本命名
 

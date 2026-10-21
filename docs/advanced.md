@@ -8,6 +8,8 @@ Export shareable Markdown from Obsidian with images hosted through your local **
 
 MarkToGo is a desktop-only plugin with English and Simplified Chinese interfaces. Saving an exported file is optional. A shared cache can reuse image uploads across computers that sync the same vault.
 
+The sharing workflow has been verified in actual use with a real cloud image host on Windows, Obsidian 1.14.4, and PicList-Core 3.0.2.
+
 ## Requirements
 
 - Obsidian desktop. Windows has been tested; macOS and Linux have not been tested yet.

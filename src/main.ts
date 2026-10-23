@@ -144,7 +144,7 @@ export default class MarkToGoPlugin extends Plugin {
 				progress: (message) => { if (!this.stopped) notice.setMessage(message); },
 				signal: controller.signal,
 			});
-			if (!this.stopped) new ShareResultModal(this.app, result, this.t, async () => {
+			if (!this.stopped) new ShareResultModal(this.app, result, name, this.t, async () => {
 				const directory = settings.outputDirectory.trim()
 					? expandHome(settings.outputDirectory.trim()) : remote?.app.getPath('downloads');
 				if (!directory) throw new MarkToGoError('downloadsMissing');

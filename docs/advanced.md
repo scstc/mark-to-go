@@ -18,7 +18,7 @@ The sharing workflow has been verified in actual use with a real cloud image hos
 
 ## Install
 
-Download `main.js` and `manifest.json` from the latest [GitHub release](https://github.com/scstc/mark-to-go/releases). Place both files in `<Vault>/.obsidian/plugins/mark-to-go/`, then enable **MarkToGo** in **Settings → Community plugins**. Manual installation is available while the community directory review is pending.
+Find **MarkToGo** in **Settings → Community plugins → Browse**, then install and enable it. For manual installation, download `main.js` and `manifest.json` from the latest [GitHub release](https://github.com/scstc/mark-to-go/releases) and place both files in `<Vault>/.obsidian/plugins/mark-to-go/`.
 
 ## Use
 
@@ -26,9 +26,11 @@ Download `main.js` and `manifest.json` from the latest [GitHub release](https://
 2. Right-click the target Markdown note in the file explorer and choose **MarkToGo**, next to the **MTG** icon. A command for the current note is also available in the command palette.
 3. The plugin resolves local image references and uploads images that are not already cached. It reads the latest editor contents for an open note, including when you right-click a different note.
 4. The complete exported Markdown is copied to the clipboard. **No exported file is created automatically.**
-5. To save a file, select **Save to Downloads** in the result dialog. A custom export folder changes this button to **Save Markdown**.
+5. On Windows, select **Copy file** to paste a `.md` attachment into an app that accepts files, or **Copy text** to copy the Markdown body again. To keep a file, select **Save to Downloads**. A custom export folder changes the save button to **Save Markdown**.
 
-The result dialog reports new uploads, reused uploads, clipboard status, and whether a file has been saved. Saving uses the prepared Markdown and does not upload images again. A successful save displays the path and an **Open containing folder** button. **Copy Markdown** and **Open containing folder** close the dialog on success; failures keep it open for retry.
+The result dialog reports the note name, new uploads, reused uploads, clipboard status, and whether a file has been saved. Copying or saving uses the prepared Markdown and does not upload images again. Copy actions keep the dialog open and update the clipboard status. A successful save displays the path and an **Open containing folder** button, which closes the dialog on success.
+
+**Copy file** currently requires Windows and its built-in Windows PowerShell. It creates a UTF-8 sharing copy with the original note name in the system temporary folder, without writing to Downloads or the export folder. The attachment remains available after the dialog closes. The next successful file copy attempts to remove the previous MarkToGo clipboard attachment; temporary copies replaced by text or another app may remain in the system temporary folder. File-paste support depends on the receiving app.
 
 Saved files use UTF-8 and names such as `Note.shared.md` or `Note.shared-1.md`. Existing files are never overwritten. Saving currently requires a file system that supports hard links; Windows NTFS has been tested.
 

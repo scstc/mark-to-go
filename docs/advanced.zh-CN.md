@@ -10,7 +10,7 @@ Export portable Markdown from Obsidian with images hosted through your local Pic
 
 为 Obsidian 笔记生成可直接分享的 Markdown：右键选择 **MarkToGo**，通过本机 PicList CLI 上传图片和 SVG，替换分享版中的资源地址，并复制全文到剪贴板。需要本地文件时，再从结果弹窗点击保存。
 
-当前版本 `26.4.2`。真实图床分享流程已在 Windows / Obsidian 1.14.4 / PicList-Core 3.0.2 环境下完成实际使用验证。
+当前版本 `26.4.3`。真实图床分享流程已在 Windows / Obsidian 1.14.4 / PicList-Core 3.0.2 环境下完成实际使用验证。
 
 ## 版本命名
 
@@ -27,9 +27,11 @@ Export portable Markdown from Obsidian with images hosted through your local Pic
 3. 安装本插件，在 **设置 → 第三方插件** 中启用 **MarkToGo**。
 4. 在文件列表中右键目标 Markdown 笔记，选择带 **MTG** 图标的 **MarkToGo**。中英文界面使用相同菜单名称，命令面板也提供对应的当前笔记操作。
 5. 图片处理完成后，分享版 Markdown 全文自动复制到剪贴板，默认不创建本地导出文件。
-6. 如需文件，在结果弹窗点击 **Save to Downloads / 保存到 Downloads**，才会保存为 `<原文件名>.shared.md`。若设置了其他导出目录，按钮为 **Save Markdown / 保存 Markdown**。
+6. Windows 上可点击 **Copy file / 复制文件**，再到支持文件粘贴的应用中粘贴 `.md` 附件；**Copy text / 复制文本** 用于重新复制正文。需要保留本地导出文件时，点击 **Save to Downloads / 保存到 Downloads**，保存为 `<原文件名>.shared.md`。若设置了其他导出目录，保存按钮为 **Save Markdown / 保存 Markdown**。
 
-结果窗口显示上传数量、复制状态和是否保存。保存成功后显示文件路径及“打开所在文件夹”按钮；同一窗口只保存一次，保存失败可以重试。保存使用已经生成的内容，不重新上传图片。点击“复制 Markdown”或“打开所在文件夹”成功后自动关闭窗口，操作失败时保留窗口。
+结果窗口显示笔记名称、上传数量、复制状态和是否保存。保存成功后显示文件路径及“打开所在文件夹”按钮；同一窗口只保存一次，保存失败可以重试。复制和保存使用已经生成的内容，不重新上传图片。复制后保留窗口并更新剪贴板状态；点击“打开所在文件夹”成功后关闭窗口。
+
+**复制文件** 目前需要 Windows 及其内置的 Windows PowerShell，会在系统临时目录生成与原笔记同名的 UTF-8 分享副本，不写入 Downloads 或导出目录。关闭弹窗后仍可粘贴；下次成功复制文件时会尝试清理上一个 MarkToGo 剪贴板附件，被文本或其他应用替换的临时副本可能留在系统临时目录。能否粘贴附件取决于接收应用。
 
 结果窗口分别显示本次“新上传”和“复用”数量。已成功上传的资源会保存映射，后续分享可直接使用已有 URL。
 
@@ -165,7 +167,7 @@ npm run lint
 
 本地安装：将构建后的 `main.js` 和 `manifest.json` 复制到 `<Vault>/.obsidian/plugins/mark-to-go/`，在 Obsidian 中启用插件。开发时只重载本插件即可，无需重启 Obsidian。
 
-发布安装：从 [GitHub Releases](https://github.com/scstc/mark-to-go/releases) 下载 `main.js` 和 `manifest.json`，放入同一插件目录并启用。社区目录收录前，请使用手动安装。
+社区安装：在 **设置 → 第三方插件 → 浏览** 中搜索 **MarkToGo**，安装并启用。手动安装也可从 [GitHub Releases](https://github.com/scstc/mark-to-go/releases) 下载 `main.js` 和 `manifest.json`，放入同一插件目录并启用。
 
 自动发版：同步四个版本文件后，推送与版本完全一致的标签，例如 `git tag 26.4.1` 和 `git push origin 26.4.1`。GitHub Actions 会校验标签、运行测试和 lint、构建，再发布公开 release，并附上 Obsidian 安装所需的独立资源文件。构建和测试失败时不会发布。
 

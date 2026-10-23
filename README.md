@@ -37,9 +37,9 @@ Desktop only. Windows has been tested; macOS and Linux have not yet been tested.
 
 1. Right-click a Markdown note and choose **MarkToGo** next to the **MTG** icon.
 2. Paste the copied Markdown wherever you want to share it. Local image links in this copy now point to your image host.
-3. If you also need a file, select **Save to Downloads** in the result dialog. **By default, the plugin only copies; it does not save a file.**
+3. On Windows, select **Copy file** in the result dialog to paste a `.md` attachment into an app that accepts files. **Copy text** copies the Markdown body instead. Select **Save to Downloads** to keep an exported file.
 
-The dialog shows new and reused uploads. Saving does not upload again; original notes and attachments are preserved.
+The dialog shows new and reused uploads. Copying a file or saving does not upload again; original notes and attachments are preserved. By default, only text is copied. **Copy file** uses a Windows temporary file with the original note name, without writing to Downloads or the export folder. Closing the dialog keeps the attachment available for pasting. The previous MarkToGo temporary attachment is removed when another file replaces it; other temporary copies may remain in the system temporary folder.
 
 ## If PicList cannot be found
 

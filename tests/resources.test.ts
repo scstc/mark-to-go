@@ -53,3 +53,31 @@ void test('accept cloud URLs and reject local, credential-bearing, or non-HTTP r
 		assert.throws(() => validateImageUrl(url));
 	}
 });
+
+void test('hidden Obsidian comments never select attachments and preserve original text and UTF-16 offsets', () => {
+	const hidden = '---\r\nimage: "![[frontmatter.png]]"\r\n---\r\n😀中文 %% ![[private.png]] %%\r\n' +
+		'%%\r\n```\r\n![[missing.png]]\r\n[p]: hidden.png\r\n%%\r\n';
+	const source = hidden + '![[visible.png]]\r\n![ref][p]\r\n\r\n[p]: first.png\r\n[p]: second.png\r\n';
+	const refs = collectImages(source);
+	assert.deepEqual(refs.map(r => r.target), ['visible.png', 'first.png']);
+	assert.equal(source.slice(refs[0]!.start, refs[0]!.end), '![[visible.png]]');
+	assert.ok(replaceImages(source, refs, () => 'https://cdn.test/image.png').startsWith(hidden));
+});
+
+void test('comment markers in real code, HTML and escaped text do not hide later images', () => {
+	const source = '`%%`\n\n~~~\n%%\n~~~\n\n<!-- %% -->\n\n\\%% literal\n\n![[visible.png]]';
+	assert.deepEqual(collectImages(source).map(r => r.target), ['visible.png']);
+	assert.deepEqual(collectImages('visible\n%% ![[never-upload.png]]'), []);
+});
+
+void test('table escapes separate display parameters without deleting path backslashes', () => {
+	const source = '| A | B |\n| --- | --- |\n| ![[image.png\\|300]] | ![[map.svg\\|说明\\|300x200]] |';
+	const refs = collectImages(source);
+	assert.deepEqual(refs.map(r => [r.target, r.alt]), [['image.png', 'image'], ['map.svg', '说明']]);
+	assert.deepEqual(collectImages('![[folder\\image.png|300]]').map(r => r.target), ['folder\\image.png']);
+});
+
+void test('the first visible reference definition wins, including a first external URL', () => {
+	assert.deepEqual(collectImages('![photo][p]\n\n[p]: first.png\n[p]: second.png').map(r => r.target), ['first.png']);
+	assert.deepEqual(collectImages('![photo][p]\n\n[p]: https://example.test/a.png\n[p]: private.png'), []);
+});

@@ -6,6 +6,7 @@ import { homedir, tmpdir } from 'node:os';
 import { stripVTControlCharacters } from 'node:util';
 import type { UploadSession } from './share';
 import { MarkToGoError } from './i18n';
+import { processError } from './process-errors';
 
 export interface PicListOptions {
 	cliPath: string;
@@ -115,7 +116,7 @@ function run(
 			signal,
 			env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
 		}, (error, stdout, stderr) => {
-			if (error) reject(new MarkToGoError('cliFailed'));
+			if (error) reject(processError(error, signal));
 			else resolvePromise({ stdout, stderr });
 		});
 	});
@@ -139,6 +140,8 @@ export async function readPicListConfig(options: PicListOptions): Promise<PicLis
 	if (!picBed || !(picBed.uploader || picBed.current)) {
 		throw new MarkToGoError('noUploader');
 	}
+	const provider = picBed.uploader || picBed.current;
+	if (typeof provider !== 'string' || !provider.trim()) throw new MarkToGoError('providerInvalid');
 	return { source, config };
 }
 

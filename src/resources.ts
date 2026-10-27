@@ -1,6 +1,7 @@
 import { fromMarkdown } from 'mdast-util-from-markdown';
 import type { Nodes } from 'mdast';
 import { MarkToGoError } from './i18n';
+import { markdownForAnalysis } from './markdown-analysis';
 
 export interface ImageReference {
 	start: number;
@@ -15,7 +16,8 @@ const IMAGE_EXTENSION = /\.(png|jpe?g|gif|webp|svg)$/i;
 const REMOTE_IMAGE = /^(?:https?:\/\/|\/\/|data:)/i;
 
 export function collectImages(markdown: string): ImageReference[] {
-	const tree = fromMarkdown(markdown);
+	const analysis = markdownForAnalysis(markdown);
+	const tree = fromMarkdown(analysis);
 	const excluded: Array<[number, number]> = [];
 	const references: ImageReference[] = [];
 	const definitions = new Map<string, { url: string; title?: string | null }>();
@@ -35,7 +37,7 @@ export function collectImages(markdown: string): ImageReference[] {
 		if (['code', 'inlineCode', 'html', 'definition'].includes(node.type)) {
 			excluded.push([start, end]);
 		}
-		if (node.type === 'definition') definitions.set(node.identifier, node);
+		if (node.type === 'definition' && !definitions.has(node.identifier)) definitions.set(node.identifier, node);
 	});
 	const isExcluded = (start: number, end: number): boolean =>
 		excluded.some(([a, b]) => start < b && end > a);
@@ -73,14 +75,14 @@ export function collectImages(markdown: string): ImageReference[] {
 	});
 
 	const wikiPattern = /!\[\[([^\]\r\n]+)\]\]/g;
-	for (const match of markdown.matchAll(wikiPattern)) {
+	for (const match of analysis.matchAll(wikiPattern)) {
 		const start = match.index;
 		const end = start + match[0].length;
 		if (isExcluded(start, end) || references.some((r) => start < r.end && end > r.start)) continue;
 		let escapes = 0;
 		for (let i = start - 1; i >= 0 && markdown[i] === '\\'; i--) escapes++;
 		if (escapes % 2) continue;
-		const parts = (match[1] ?? '').split('|');
+		const parts = (match[1] ?? '').replace(/\\\|/g, '|').split('|');
 		const target = parts.shift() ?? '';
 		const label = parts.find((part) => !/^\d+(?:x\d+)?$/.test(part));
 		const fallback = target.split('/').pop()?.split('#')[0]?.replace(/\.[^.]+$/, '') ?? '';

@@ -30,6 +30,8 @@ Find **MarkToGo** in **Settings → Community plugins → Browse**, then install
 
 The result dialog reports the note name, new uploads, reused uploads, clipboard status, and whether a file has been saved. Copying or saving uses the prepared Markdown and does not upload images again. Copy actions keep the dialog open and update the clipboard status. A successful save displays the path and an **Open containing folder** button, which closes the dialog on success.
 
+The latest share or explicit copy action owns the clipboard. Older exports still finish preparing but report that automatic copying was skipped. File and text writes are serialized; newer actions cancel in-progress file copying when possible. Unloading the plugin invalidates pending copies and closes its result windows. A temporary attachment that may already have reached the clipboard is retained so pasting is not broken.
+
 **Copy file** currently requires Windows and its built-in Windows PowerShell. It creates a UTF-8 sharing copy with the original note name in the system temporary folder, without writing to Downloads or the export folder. The attachment remains available after the dialog closes. The next successful file copy attempts to remove the previous MarkToGo clipboard attachment; temporary copies replaced by text or another app may remain in the system temporary folder. File-paste support depends on the receiving app.
 
 Saved files use UTF-8 and names such as `Note.shared.md` or `Note.shared-1.md`. Existing files are never overwritten. Saving currently requires a file system that supports hard links; Windows NTFS has been tested.
@@ -41,6 +43,7 @@ Saved files use UTF-8 and names such as `Note.shared.md` or `Note.shared-1.md`. 
 - Obsidian link resolution, relative paths, spaces, Unicode names, and URL-encoded paths.
 - Existing HTTP(S), protocol-relative, and `data:` image references are preserved without uploading.
 - Frontmatter, code blocks, inline code, ordinary links, tables, and surrounding text are preserved.
+- Images in inline, multiline or unclosed Obsidian `%%` comments are excluded from uploads; the original comment text remains in the output. Markers inside code or HTML do not start Obsidian comments. Table image parameters such as `![[image.png\|300]]` are supported, and the first visible reference definition wins when labels are repeated.
 
 For example:
 
@@ -69,6 +72,8 @@ HTML `<img>` elements, ordinary attachment links, and note links remain unchange
 | Shared upload cache | Clear stored mappings when necessary. Clearing does not delete cloud files. |
 
 Paths support spaces, Unicode, `~`, and `%ENVIRONMENT_VARIABLES%`. Obsidian launched from the desktop can have a different PATH from a terminal. Specify full paths when automatic discovery fails.
+
+**Check local configuration** performs read-only checks of the CLI entry, a fixed `node --version` command, the configuration JSON/default host identifier, export folder metadata and Windows PowerShell availability. It never runs PicList or its plugins, writes test files, uploads images or accesses the clipboard. It does not verify credentials, network access, execution policy, clipboard availability or hard-link support. Settings are searchable on Obsidian 1.13+; older versions keep the traditional settings tab.
 
 Default desktop PicList configuration paths:
 
@@ -112,6 +117,8 @@ Versions follow **`YY.quarter.release-number`**: the final two digits of the yea
 Update `package.json`, `package-lock.json`, `manifest.json`, and `versions.json` together. Git tags match the manifest version exactly, without a `v` prefix. Values in `versions.json` are minimum Obsidian versions.
 
 Pushing a version tag triggers GitHub Actions to validate versions, run tests and lint, build the plugin, attest the build provenance, and publish the individual release assets. A manual release can also be dispatched against the version tag itself. Failed checks prevent publication.
+
+Release publication also requires Windows regression checks. CI explicitly checks Node type resolution before linting. The community report for 26.4.3 had 254 unsafe-type diagnostics: 137 calls, 52 member accesses, 37 assignments, 19 arguments and 9 returns. Those exact counts were reproduced by removing Node declarations from an in-memory analysis program; the complete local type environment produced zero. They are not evidence of 254 confirmed security flaws. Filesystem and process-execution capability notices remain applicable to PicList, temporary files and file copying. The external community scanner controls when its report is refreshed.
 
 ## Development
 

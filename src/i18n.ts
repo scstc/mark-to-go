@@ -18,12 +18,14 @@ export function createTranslator(language: 'en' | 'zh'): Translator {
 }
 
 export class MarkToGoError extends Error {
-	constructor(readonly key: MessageKey, readonly params: MessageParams = {}) {
+	constructor(readonly key: MessageKey, readonly params: MessageParams = {}, readonly cause?: unknown) {
 		super(createTranslator('zh')(key, params));
 		this.name = 'MarkToGoError';
 	}
 }
 
 export function localizeError(error: unknown, t: Translator): string {
-	return error instanceof MarkToGoError ? t(error.key, error.params) : t('shareFailed');
+	if (!(error instanceof MarkToGoError)) return t('shareFailed');
+	const message = t(error.key, error.params);
+	return error.cause instanceof MarkToGoError ? message + ' ' + localizeError(error.cause, t) : message;
 }

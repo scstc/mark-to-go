@@ -89,7 +89,7 @@ void test('real CLI uploads once, a restarted client exports from shared cache w
 			openUploader: () => createCachedUploader(
 				{ cliPath, nodePath: process.execPath, configPath: config, timeoutSeconds: 30 },
 				new UploadCache(cacheFile), () => assert.fail('Unexpected cache warning')),
-			copy: () => Promise.resolve(),
+			copy: () => Promise.resolve('copied'),
 			progress: () => undefined,
 		});
 		const first = await runShare();

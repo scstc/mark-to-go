@@ -20,7 +20,7 @@ function fixture() {
 				close: () => { closed++; return Promise.resolve(); },
 			});
 		},
-		copy: (content) => { copied.push(content); return Promise.resolve(); },
+		copy: (content) => { copied.push(content); return Promise.resolve('copied'); },
 		progress: () => undefined,
 	};
 	return { deps, uploads, copied, get opened() { return opened; }, get closed() { return closed; } };
@@ -32,7 +32,7 @@ void test('default export only copies shareable text without requiring PicList o
 	const result = await shareMarkdown(content, f.deps);
 	assert.equal(f.opened, 0);
 	assert.deepEqual(f.copied, [content]);
-	assert.deepEqual(result, { content, uploaded: 0, reused: 0, copied: true });
+	assert.deepEqual(result, { content, uploaded: 0, reused: 0, clipboardStatus: 'copied' });
 	assert.equal('path' in result, false);
 });
 
@@ -87,7 +87,7 @@ void test('clipboard failure retains prepared Markdown for a later retry or expl
 	const f = fixture();
 	f.deps.copy = () => Promise.reject(new Error('unavailable'));
 	const result = await shareMarkdown('# Note', f.deps);
-	assert.equal(result.copied, false);
+	assert.equal(result.clipboardStatus, 'failed');
 	assert.equal('path' in result, false);
 	assert.equal(result.content, '# Note');
 });

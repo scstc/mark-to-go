@@ -38,8 +38,8 @@ void test('English export progress does not fall back to hardcoded Chinese', asy
 		translate: createTranslator('en'),
 		resolve: () => Promise.resolve(null),
 		openUploader: () => assert.fail('No images should require an uploader'),
-		copy: () => Promise.resolve(),
+		copy: () => Promise.resolve('copied'),
 		progress: message => { progress.push(message); },
 	});
-	assert.deepEqual(progress, ['Checking images…', 'Copying Markdown…']);
+	assert.deepEqual(progress, ['Checking images…']);
 });

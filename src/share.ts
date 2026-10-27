@@ -1,6 +1,7 @@
 import { collectImages, replaceImages, validateImageUrl } from './resources';
 import { createTranslator, MarkToGoError } from './i18n';
 import type { Translator } from './i18n';
+import type { ClipboardOutcome } from './clipboard-coordinator';
 
 export interface Resource {
 	key: string;
@@ -17,7 +18,7 @@ export interface ShareDependencies {
 	translate?: Translator;
 	resolve(target: string): Promise<Resource | null>;
 	openUploader(): Promise<UploadSession>;
-	copy(content: string): Promise<void>;
+	copy(content: string): Promise<ClipboardOutcome>;
 	progress(message: string): void;
 	signal?: AbortSignal;
 }
@@ -26,7 +27,7 @@ export interface ShareResult {
 	content: string;
 	uploaded: number;
 	reused: number;
-	copied: boolean;
+	clipboardStatus: ClipboardOutcome | 'failed';
 }
 
 export async function shareMarkdown(content: string, deps: ShareDependencies): Promise<ShareResult> {
@@ -61,8 +62,9 @@ export async function shareMarkdown(content: string, deps: ShareDependencies): P
 				deps.progress(t('processing', { current: urls.size + 1, total: resources.size }));
 				try {
 					urls.set(key, validateImageUrl(await uploader.upload(resource.path)));
-				} catch {
-					throw new MarkToGoError('uploadFailed', { path: key, completed: urls.size, total: resources.size });
+				} catch (error) {
+					if (deps.signal?.aborted) throw new MarkToGoError('cancelled');
+					throw new MarkToGoError('uploadFailed', { path: key, completed: urls.size, total: resources.size }, error);
 				}
 			}
 			uploaded = uploader.stats?.uploaded ?? urls.size;
@@ -78,13 +80,12 @@ export async function shareMarkdown(content: string, deps: ShareDependencies): P
 		if (!url) throw new MarkToGoError('incompleteResults');
 		return url;
 	});
-	deps.progress(t('copying'));
-	let copied = true;
+	let clipboardStatus: ShareResult['clipboardStatus'];
 	try {
 		checkCancelled();
-		await deps.copy(exported);
+		clipboardStatus = await deps.copy(exported);
 	} catch {
-		copied = false;
+		clipboardStatus = 'failed';
 	}
-	return { content: exported, uploaded, reused, copied };
+	return { content: exported, uploaded, reused, clipboardStatus };
 }

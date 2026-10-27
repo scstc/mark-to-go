@@ -5,6 +5,7 @@ import type { ShareResult } from './share';
 import type { Translator } from './i18n';
 import { localizeError } from './i18n';
 import { copyMarkdownFile } from './file-clipboard';
+import type { ClipboardCoordinator } from './clipboard-coordinator';
 
 export class ShareResultModal extends Modal {
 	constructor(
@@ -13,7 +14,9 @@ export class ShareResultModal extends Modal {
 		private readonly filename: string,
 		private readonly t: Translator,
 		private readonly saveFile: () => Promise<string>,
+		private readonly clipboard: ClipboardCoordinator,
 		private readonly customFolder = false,
+		private readonly closed: () => void = () => undefined,
 	) {
 		super(app);
 	}
@@ -25,7 +28,8 @@ export class ShareResultModal extends Modal {
 			text: this.t('resultCounts', { uploaded: this.result.uploaded, reused: this.result.reused }),
 		});
 		const status = this.contentEl.createEl('p', {
-			text: this.t(this.result.copied ? 'clipboardCopied' : 'clipboardFailed'),
+			text: this.t(this.result.clipboardStatus === 'copied' ? 'clipboardCopied' :
+				this.result.clipboardStatus === 'skipped' ? 'clipboardSkipped' : 'clipboardFailed'),
 			attr: { role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' },
 		});
 		this.contentEl.createEl('p', { text: this.t('copyFileHint'), cls: 'setting-item-description' });
@@ -62,35 +66,43 @@ export class ShareResultModal extends Modal {
 		}));
 		let copying = false;
 		let fileButton: ButtonComponent;
-		actions.addButton((button) => button.setButtonText(this.t('copyMarkdown')).onClick(() => {
-			if (copying) return;
-			try {
-				clipboard.writeText(this.result.content);
-				status.setText(this.t('clipboardCopied'));
-				fileButton.setButtonText(this.t('copyFile'));
-			} catch {
-				status.setText(this.t('clipboardRetryFailed'));
-			}
-		}));
+		let textButton: ButtonComponent;
+		actions.addButton((button) => {
+			textButton = button;
+			button.setButtonText(this.t('copyMarkdown')).onClick(async () => {
+				if (copying) return;
+				const ticket = this.clipboard.claim();
+				try {
+					const outcome = await this.clipboard.write(ticket, async () => clipboard.writeText(this.result.content));
+					status.setText(this.t(outcome === 'copied' ? 'clipboardCopied' : 'clipboardSkipped'));
+					fileButton.setButtonText(this.t('copyFile'));
+				} catch {
+					status.setText(this.t('clipboardRetryFailed'));
+				}
+			});
+		});
 		actions.addButton((button) => {
 			fileButton = button;
 			button.buttonEl.disabled = process.platform !== 'win32';
 			button.buttonEl.title = this.t(process.platform === 'win32' ? 'copyFileHint' : 'fileClipboardUnsupported');
-			button.setButtonText(this.t('copyFile')).setCta()
-			.onClick(async () => {
+			button.setButtonText(this.t('copyFile')).setCta().onClick(async () => {
 				if (copying) return;
 				copying = true;
+				const ticket = this.clipboard.claim();
+				textButton.buttonEl.disabled = true;
 				button.buttonEl.disabled = true;
 				button.setButtonText(this.t('copyingFile'));
 				try {
-					await copyMarkdownFile(this.filename, this.result.content);
-					status.setText(this.t('fileClipboardCopied'));
-					button.setButtonText(this.t('fileCopied'));
-				} catch {
-					status.setText(this.t('fileClipboardFailed'));
+					const outcome = await this.clipboard.write(ticket,
+						(signal) => copyMarkdownFile(this.filename, this.result.content, signal));
+					status.setText(this.t(outcome === 'copied' ? 'fileClipboardCopied' : 'clipboardSkipped'));
+					button.setButtonText(this.t(outcome === 'copied' ? 'fileCopied' : 'copyFile'));
+				} catch (error) {
+					status.setText(this.t('fileClipboardFailed') + ' ' + localizeError(error, this.t));
 					button.setButtonText(this.t('copyFile'));
 				} finally {
 					copying = false;
+					textButton.buttonEl.disabled = false;
 					button.buttonEl.disabled = false;
 				}
 			});
@@ -99,5 +111,6 @@ export class ShareResultModal extends Modal {
 
 	onClose(): void {
 		this.contentEl.empty();
+		this.closed();
 	}
 }

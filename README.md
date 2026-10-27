@@ -43,6 +43,8 @@ The dialog shows new and reused uploads. Copying a file or saving does not uploa
 
 ## If PicList cannot be found
 
+Select **Settings → MarkToGo → Check local configuration** first. This checks local programs, configuration and folders without uploading images, running PicList plugins, creating export folders or changing the clipboard. It does not test your image-host credentials or network connection.
+
 Open **Settings → MarkToGo** and fill in only the paths that automatic discovery could not find:
 
 | Setting | What to enter |
@@ -57,6 +59,8 @@ The CLI's default `~/.piclist/config.json` is a different file. **Use the deskto
 
 - Supports PNG, JPEG, GIF, WebP, SVG, standard Markdown images, reference images, and Obsidian image embeds. Existing online image links are preserved.
 - Excalidraw notes must be exported to PNG/SVG first. HTML images, ordinary attachment links, and note links are not converted.
+- Images inside Obsidian `%%…%%` comments are not uploaded. The comment text itself remains in the shared Markdown; this is not a redaction feature.
+- When sharing several notes, the latest share or explicit copy action takes priority for the clipboard. Older results remain available for manual copying.
 - Upload mappings are stored in `MarkToGo/upload-cache.json`. Sync this folder with your vault to reuse uploads on other computers. Simultaneous first uploads can still duplicate; there is no cross-device lock.
 - Saving currently requires a file system with hard-link support, such as NTFS. Exported files never overwrite existing ones.
 - Choose **Follow Obsidian**, **English**, or **简体中文** in the language setting.

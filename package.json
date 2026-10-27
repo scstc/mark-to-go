@@ -1,6 +1,6 @@
 {
 	"name": "mark-to-go",
-	"version": "26.4.3",
+	"version": "26.4.4",
 	"description": "Export shareable Markdown with PicList-hosted images while preserving local notes.",
 	"main": "main.js",
 	"type": "module",
@@ -9,6 +9,7 @@
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint .",
+		"check:node-types": "node scripts/check-node-types.mjs",
 		"test": "tsx --test tests/*.test.ts",
 		"test:piclist": "tsx --test tests/integration/*.test.ts"
 	},
@@ -22,7 +23,7 @@
 		"eslint-plugin-obsidianmd": "^0.4.0",
 		"globals": "^17.6.0",
 		"jiti": "^2.6.1",
-		"obsidian": "latest",
+		"obsidian": "^1.14.4",
 		"tsx": "^4.23.15",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "^8.59.1"

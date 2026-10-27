@@ -1,4 +1,4 @@
-import { addIcon, FileSystemAdapter, MarkdownView, Notice, Plugin, removeIcon, TFile } from 'obsidian';
+import { addIcon, FileSystemAdapter, getLanguage, MarkdownView, Notice, Plugin, removeIcon, requireApiVersion, TFile } from 'obsidian';
 import icon from '../assets/icon-monochrome.svg';
 import { realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
@@ -15,6 +15,7 @@ import { ShareResultModal } from './result-modal';
 import { createTranslator, localizeError, resolveLanguage, MarkToGoError } from './i18n';
 import type { LanguageSetting, Translator } from './i18n';
 import type { Command } from 'obsidian';
+import { ClipboardCoordinator } from './clipboard-coordinator';
 
 export default class MarkToGoPlugin extends Plugin {
 	settings: MarkToGoSettings = { ...DEFAULT_SETTINGS };
@@ -22,9 +23,11 @@ export default class MarkToGoPlugin extends Plugin {
 	private stopped = false;
 	private uploadCache!: UploadCache;
 	private shareCommand?: Command;
+	private readonly clipboard = new ClipboardCoordinator();
+	private readonly results = new Set<ShareResultModal>();
 
 	get t(): Translator {
-		const appLanguage = document.documentElement.lang || 'en';
+		const appLanguage = requireApiVersion('1.8.7') ? getLanguage() : document.documentElement.lang || 'en';
 		return createTranslator(resolveLanguage(this.settings.language, appLanguage));
 	}
 
@@ -63,6 +66,9 @@ export default class MarkToGoPlugin extends Plugin {
 
 	onunload(): void {
 		this.stopped = true;
+		this.clipboard.dispose();
+		for (const modal of this.results) modal.close();
+		this.results.clear();
 		for (const controller of this.pending.values()) controller.abort();
 		this.pending.clear();
 	}
@@ -121,6 +127,7 @@ export default class MarkToGoPlugin extends Plugin {
 	async share(file: TFile): Promise<void> {
 		const key = file.path;
 		if (this.pending.has(key) || this.stopped) return;
+		const ticket = this.clipboard.claim();
 		const controller = new AbortController();
 		this.pending.set(key, controller);
 		const notice = new Notice(this.t('preparing'), 0);
@@ -137,14 +144,15 @@ export default class MarkToGoPlugin extends Plugin {
 						new Notice(this.t('cacheWarning'), 12000);
 					}
 				}, controller.signal),
-				copy: (content) => {
+				copy: (content) => this.clipboard.write(ticket, async () => {
+					notice.setMessage(this.t('copying'));
 					clipboard.writeText(content);
-					return Promise.resolve();
-				},
+				}),
 				progress: (message) => { if (!this.stopped) notice.setMessage(message); },
 				signal: controller.signal,
 			});
-			if (!this.stopped) new ShareResultModal(this.app, result, name, this.t, async () => {
+			if (this.stopped) return;
+			const modal = new ShareResultModal(this.app, result, name, this.t, async () => {
 				const directory = settings.outputDirectory.trim()
 					? expandHome(settings.outputDirectory.trim()) : remote?.app.getPath('downloads');
 				if (!directory) throw new MarkToGoError('downloadsMissing');
@@ -153,7 +161,9 @@ export default class MarkToGoPlugin extends Plugin {
 				} catch {
 					throw new MarkToGoError('saveFailed', { uploaded: result.uploaded });
 				}
-			}, Boolean(settings.outputDirectory.trim())).open();
+			}, this.clipboard, Boolean(settings.outputDirectory.trim()), () => this.results.delete(modal));
+			this.results.add(modal);
+			modal.open();
 		} catch (error) {
 			if (!this.stopped) new Notice(localizeError(error, this.t), 12000);
 		} finally {

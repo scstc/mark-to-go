@@ -10,7 +10,7 @@ Export portable Markdown from Obsidian with images hosted through your local Pic
 
 为 Obsidian 笔记生成可直接分享的 Markdown：右键选择 **MarkToGo**，通过本机 PicList CLI 上传图片和 SVG，替换分享版中的资源地址，并复制全文到剪贴板。需要本地文件时，再从结果弹窗点击保存。
 
-当前版本 `26.4.3`。真实图床分享流程已在 Windows / Obsidian 1.14.4 / PicList-Core 3.0.2 环境下完成实际使用验证。
+当前版本 `26.4.4`。真实图床分享流程已在 Windows / Obsidian 1.14.4 / PicList-Core 3.0.2 环境下完成实际使用验证。
 
 ## 版本命名
 
@@ -34,6 +34,8 @@ Export portable Markdown from Obsidian with images hosted through your local Pic
 **复制文件** 目前需要 Windows 及其内置的 Windows PowerShell，会在系统临时目录生成与原笔记同名的 UTF-8 分享副本，不写入 Downloads 或导出目录。关闭弹窗后仍可粘贴；下次成功复制文件时会尝试清理上一个 MarkToGo 剪贴板附件，被文本或其他应用替换的临时副本可能留在系统临时目录。能否粘贴附件取决于接收应用。
 
 结果窗口分别显示本次“新上传”和“复用”数量。已成功上传的资源会保存映射，后续分享可直接使用已有 URL。
+
+多篇笔记同时分享时，以最近一次分享或手动复制操作为准；较早任务仍生成结果，但会明确显示未自动复制。文本和文件复制排队提交，较新的操作会尽可能取消正在执行的文件复制。卸载插件会取消待处理复制并关闭结果窗口；可能已经写入剪贴板的临时附件会保留，以免影响粘贴。
 
 **原笔记和本地附件始终保留。只有导出的分享版使用在线图片地址。**
 
@@ -66,6 +68,8 @@ Export portable Markdown from Obsidian with images hosted through your local Pic
 | 单张图片上传超时 | 120 秒，可设置为 5–600 秒 |
 
 路径支持空格、中文、`~` 和 `%环境变量%`。Obsidian 从桌面启动时的 PATH 可能与终端不同；自动查找失败时填写完整路径。
+
+**检查本地配置** 只读取 CLI 入口、固定的 `node --version` 输出、配置 JSON 和默认图床标识、导出目录信息及 Windows PowerShell 是否存在。不运行 PicList 或其插件，不写测试文件、不上传图片、不读写剪贴板；不验证图床凭证、网络连接、执行策略、剪贴板可用性或硬链接能力。Obsidian 1.13+ 可在全局设置搜索中查找插件设置，旧版保留普通设置页。无效超时值会显示提示，失焦恢复有效值。
 
 桌面 PicList 配置的默认位置：
 
@@ -110,6 +114,8 @@ Export portable Markdown from Obsidian with images hosted through your local Pic
 
 HTML `<img>` 保持原样，不自动上传；若其中引用本地资源，需自行处理。普通附件链接和笔记链接也保持原样，分享时仍可能依赖 Vault。目标平台需支持相应图片格式，部分平台不能渲染 SVG。
 
+Obsidian 行内、多行及未闭合的 `%%` 注释内图片不会上传，但注释原文仍保留在分享文本中，不用于删除敏感文字；代码和 HTML 内的标记不会开启注释。支持表格中的 `![[图片.png\|300]]`、尺寸和别名；重复参考定义采用第一项可见定义。
+
 `![[drawing.excalidraw.md]]` 等不支持的嵌入会明确报错；请先导出为 SVG / PNG，再在笔记中引用。
 
 ## 失败处理与数据范围
@@ -147,7 +153,7 @@ HTML `<img>` 保持原样，不自动上传；若其中引用本地资源，需�
 - [ ] 支持不具备硬链接能力的导出目标（例如部分网络文件系统）。
 - [ ] 直接导出 Excalidraw、Mermaid 等内容为图片后分享。
 - [ ] 按需求增加 HTML 图片及其他附件类型。
-- [ ] 适配 Obsidian 新版声明式设置 API，使设置项可被全局设置搜索检索；当前使用普通设置页。
+- [x] 适配 Obsidian 1.13+ 声明式设置与全局设置搜索，同时保留旧版普通设置页。
 - [ ] 若需要严格防止多电脑同时首次上传重复，增加统一的缓存及上传协调服务。
 
 ## 开发
@@ -174,6 +180,8 @@ npm run lint
 图标：`assets/icon.svg` 是彩色 **MTG** 字标，`assets/icon.png` 是 512 像素 PNG，`assets/icon-monochrome.svg` 是菜单使用的主题自适应单色版本，随构建嵌入插件，无需另行安装图标文件。
 
 Vault 外部访问限于功能所需的 Node.js / PicList CLI、PicList 配置及插件、临时目录和导出目标。不要提交 `main.js`、`node_modules/`、用户配置或云端密钥。
+
+发布前增加 Windows 回归和 Node 类型解析检查。社区对 26.4.3 的扫描包含 254 条类型诊断（调用 137、成员访问 52、赋值 37、参数 19、返回值 9）；在内存分析环境中移除 Node 声明后可精确复现这些数量，完整本地类型环境下为 0，不能等同于 254 个已确认安全漏洞。文件系统与子进程能力提示仍适用于图床调用、临时文件和附件复制。社区报告何时重新扫描和刷新由外部服务控制。
 
 ## 参考
 

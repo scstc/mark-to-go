@@ -14,7 +14,21 @@ concurrency:
     cancel-in-progress: false
 
 jobs:
+    windows:
+        runs-on: windows-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  cache: 'npm'
+            - run: npm ci
+            - run: npm run check:node-types
+            - run: npm test
+            - run: npm run build
+            - run: npm run lint
     release:
+        needs: windows
         runs-on: ubuntu-latest
         permissions:
             contents: write
@@ -45,6 +59,7 @@ jobs:
                   assert.equal(json('versions.json')[manifest.version], manifest.minAppVersion);
                   NODE
             - run: npm ci
+            - run: npm run check:node-types
             - run: npm test
             - run: npm run lint
             - run: npm run build

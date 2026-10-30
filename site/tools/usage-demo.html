@@ -4,11 +4,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MarkToGo usage animation source</title>
 <style>html,body{margin:0;background:#0b1714}canvas{display:block;width:960px;height:540px}</style>
-<canvas id="animation" width="960" height="540" aria-label="MarkToGo illustrated usage demonstration"></canvas>
+<canvas id="animation" width="2880" height="1620" aria-label="MarkToGo illustrated usage demonstration"></canvas>
 <script>
 // Deterministic, dependency-free timeline. Call renderFrame(seconds, 'zh' | 'en')
-// to render one frame. GIF exports use 12 fps over 13 seconds.
+// to render one frame. The 960 x 540 logical scene is drawn natively at 3x
+// (2880 x 1620). Capture at 960 x 540 CSS pixels with deviceScaleFactor: 3;
+// Exports use 12 fps over 13 seconds. APNG preserves lossless full-color RGB
+// frames with infinite looping; the compatibility GIF export uses 256 colors.
 const canvas = document.getElementById('animation'), c = canvas.getContext('2d');
+c.setTransform(canvas.width / 960, 0, 0, canvas.height / 540, 0, 0);
 const font = '"Segoe UI","Microsoft YaHei",sans-serif';
 const mono = 'Consolas,"Microsoft YaHei",monospace';
 const photo = new Image(), brand = new Image(), obsidian = new Image();

@@ -7,7 +7,7 @@
 .usage-intro p { font-size: 17px; color: var(--muted); }
 .usage-intro .text-button { margin-top: 10px; color: var(--accent); }
 .usage-intro .text-button:disabled { color: var(--muted); }
-.usage-figure { margin: 0; }
+.usage-figure { max-width: 1440px; margin: 0 auto; }
 .usage-figure img { width: 100%; height: auto; aspect-ratio: 16 / 9; display: block; object-fit: contain; background: #081410; border-radius: 8px; }
 .usage-figure figcaption { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 24px; font-size: 14px; color: var(--muted); margin-top: 18px; line-height: 1.7; }
 .usage-figure figcaption p { max-width: 720px; }

@@ -34,9 +34,14 @@ and falls back to verified records in `src/release-data.ts` when GitHub is unava
 Refresh that snapshot from the actual release after publishing a new version.
 No vault or demo content is sent to GitHub.
 
-The bilingual 960 x 540 usage walkthrough uses self-hosted GIFs and PNG posters.
+The bilingual 2880 x 1620 usage walkthrough uses self-hosted full-color, lossless
+animated PNGs (APNG) and static PNG posters,
+rendered from the Canvas timeline in `tools/usage-demo.html` at three times its
+logical resolution. Display width is capped at 1440 CSS pixels for sharp 2x screens.
+Versioned media URLs refresh previously cached lower-resolution files.
 Its local pause button, the global motion control and reduced-motion preference
 all switch to a static poster. The caption identifies it as an illustrated workflow.
+High-resolution GIF exports remain available at their original public URLs.
 
 The guide recommends direct OSS/S3 uploads first, with PicList as an alternative.
 Direct OSS/S3 uploads are available from plugin version 26.4.5 and require Obsidian

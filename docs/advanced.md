@@ -124,6 +124,8 @@ Pushing a version tag triggers GitHub Actions to validate versions, run tests an
 
 Release publication also requires Windows regression checks. CI explicitly checks Node type resolution before linting. The community report for 26.4.3 had 254 unsafe-type diagnostics: 137 calls, 52 member accesses, 37 assignments, 19 arguments and 9 returns. Those exact counts were reproduced by removing Node declarations from an in-memory analysis program; the complete local type environment produced zero. They are not evidence of 254 confirmed security flaws. Filesystem and process-execution capability notices remain applicable to PicList, temporary files and file copying. The external community scanner controls when its report is refreshed.
 
+The 26.4.5 community report contained 1,452 findings: 1,449 source-level findings, all in the independent website's `site/` directory, plus filesystem, process-execution and clipboard capability notices. No source-level finding pointed to the plugin's `src/`. From 26.4.6, the website lives in `docs/site/`, following the [scanner's documented documentation exclusion](https://github.com/obsidianmd/eslint-plugin/blob/master/docs/configuration.md#community-plugin-scanner-configuration). It has its own dependencies and build; its React and WebGL code is not bundled into the plugin. All plugin lint rules remain enabled. The three capability notices describe required functionality and may remain after the community service refreshes the report. Malware-scan availability is controlled by that service.
+
 ## Development
 
 Based on the [official Obsidian sample plugin](https://github.com/obsidianmd/obsidian-sample-plugin), using TypeScript, npm, and esbuild. The license is **0-BSD**; original template attribution is retained in `LICENSE`.
@@ -138,6 +140,8 @@ npm run lint
 ```
 
 `npm test` does not require PicList. `npm run test:piclist` requires the installed `piclist` CLI and uses only synthetic files, temporary local storage, and a synthetic uploader plugin. It does not use your cloud account or upload your attachments.
+
+The documentation website is a separate project: run `npm ci` and `npm run build` from `docs/site/`. Its GitHub Pages URL stays unchanged.
 
 Copy the built `main.js`, `manifest.json`, and `styles.css` into the plugin directory for local testing, then reload only MarkToGo. Do not commit generated `main.js`, `node_modules/`, user configuration, or credentials.
 

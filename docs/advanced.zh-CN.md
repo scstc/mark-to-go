@@ -10,7 +10,7 @@ Export portable Markdown from Obsidian with images hosted through PicList, Aliba
 
 为 Obsidian 笔记生成可直接分享的 Markdown：右键选择 **MarkToGo**，通过本机 PicList CLI、阿里云 OSS 或 AWS S3 上传图片和 SVG，替换分享版中的资源地址，并复制全文到剪贴板。需要本地文件时，再从结果弹窗点击保存。OSS、S3 配置与最小权限说明见[快速上手](../README.zh-CN.md#选择上传方式)。
 
-当前版本 `26.4.5`，新增阿里云 OSS 与 AWS S3 直连。真实图床分享流程已在 Windows / Obsidian / PicList-Core 3.0.2 环境下完成实际使用验证，OSS 已通过真实桶上传及缓存复用验证；S3 已通过签名向量和本地传输测试，尚未使用真实 AWS 桶验证。
+当前版本 `26.4.6`，修正官网与插件的社区扫描范围；`26.4.5` 起支持阿里云 OSS 与 AWS S3 直连。真实图床分享流程已在 Windows / Obsidian / PicList-Core 3.0.2 环境下完成实际使用验证，OSS 已通过真实桶上传及缓存复用验证；S3 已通过签名向量和本地传输测试，尚未使用真实 AWS 桶验证。
 
 ## 版本命名
 
@@ -174,6 +174,8 @@ npm run lint
 
 `npm test` 是不依赖 PicList 的自动测试；`npm run test:piclist` 要求本机已安装 `piclist` CLI，只使用临时本地存储和合成图床插件，不访问真实云端服务。
 
+官网是独立项目：在 `docs/site/` 中运行 `npm ci` 和 `npm run build`。GitHub Pages 的公开地址保持不变。
+
 本地安装：将构建后的 `main.js`、`manifest.json` 和 `styles.css` 复制到 `<Vault>/.obsidian/plugins/mark-to-go/`，在 Obsidian 中启用插件。开发时只重载本插件即可，无需重启 Obsidian。
 
 社区安装：在 **设置 → 第三方插件 → 浏览** 中搜索 **MarkToGo**，安装并启用。手动安装也可从 [GitHub Releases](https://github.com/scstc/mark-to-go/releases) 下载 `main.js`、`manifest.json` 和 `styles.css`，放入同一插件目录并启用。
@@ -185,6 +187,8 @@ npm run lint
 Vault 外部访问限于功能所需的 Node.js / PicList CLI、PicList 配置及插件、临时目录和导出目标。不要提交 `main.js`、`node_modules/`、用户配置或云端密钥。
 
 发布前增加 Windows 回归和 Node 类型解析检查。社区对 26.4.3 的扫描包含 254 条类型诊断（调用 137、成员访问 52、赋值 37、参数 19、返回值 9）；在内存分析环境中移除 Node 声明后可精确复现这些数量，完整本地类型环境下为 0，不能等同于 254 个已确认安全漏洞。文件系统与子进程能力提示仍适用于图床调用、临时文件和附件复制。社区报告何时重新扫描和刷新由外部服务控制。
+
+26.4.5 的社区报告共 1452 项：1449 条带源码位置的诊断全部指向独立官网的 `site/`，插件 `src/` 为 0 条；另有文件系统、子进程和剪贴板 3 项能力提示。26.4.6 起，官网移至 `docs/site/`，使用[官方扫描文档规定的文档目录排除范围](https://github.com/obsidianmd/eslint-plugin/blob/master/docs/configuration.md#community-plugin-scanner-configuration)。官网继续独立安装依赖、独立构建，React 与 WebGL 代码不进入插件，插件 lint 规则保持启用。3 项能力提示对应实际功能，社区报告刷新后仍可能保留；恶意软件扫描是否可用也由社区服务决定。
 
 ## 参考
 

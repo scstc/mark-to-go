@@ -10,8 +10,8 @@ Share an Obsidian note without sending its images separately. **MarkToGo uploads
 
 <a href="https://scstc.github.io/mark-to-go/usage-demo-en-animated.png?v=hd-2880">
   <picture>
-    <source media="(prefers-reduced-motion: reduce)" srcset="site/public/usage-demo-en.png">
-    <img src="site/public/usage-demo-en-animated.png" alt="MarkToGo walkthrough: choose OSS or S3, right-click a note, convert local image links and copy the shared Markdown or a file." width="960">
+    <source media="(prefers-reduced-motion: reduce)" srcset="docs/site/public/usage-demo-en.png">
+    <img src="docs/site/public/usage-demo-en-animated.png" alt="MarkToGo walkthrough: choose OSS or S3, right-click a note, convert local image links and copy the shared Markdown or a file." width="960">
   </picture>
 </a>
 

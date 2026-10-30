@@ -10,8 +10,8 @@
 
 <a href="https://scstc.github.io/mark-to-go/usage-demo-zh-animated.png?v=hd-2880">
   <picture>
-    <source media="(prefers-reduced-motion: reduce)" srcset="site/public/usage-demo-zh.png">
-    <img src="site/public/usage-demo-zh-animated.png" alt="MarkToGo 使用流程：选择 OSS 或 S3，右键笔记，将本地图片转为在线链接，再复制分享版 Markdown 或文件。" width="960">
+    <source media="(prefers-reduced-motion: reduce)" srcset="docs/site/public/usage-demo-zh.png">
+    <img src="docs/site/public/usage-demo-zh-animated.png" alt="MarkToGo 使用流程：选择 OSS 或 S3，右键笔记，将本地图片转为在线链接，再复制分享版 Markdown 或文件。" width="960">
   </picture>
 </a>
 

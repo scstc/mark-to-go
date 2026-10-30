@@ -2,12 +2,18 @@
 
 Bilingual React + TypeScript website, built with Vite and deployed to GitHub Pages.
 The plugin and website have separate dependencies and build outputs.
+Run these commands from `docs/site/`:
 
 ```sh
 npm ci
 npm run dev
 npm run build
 ```
+
+This browser-only documentation site lives under `docs/`, which the
+[community scanner excludes from plugin checks](https://github.com/obsidianmd/eslint-plugin/blob/master/docs/configuration.md#community-plugin-scanner-configuration).
+Its React and WebGL sources are not part of the Obsidian plugin's `main.js`.
+Plugin source remains in the root `src/` and retains all local lint checks.
 
 The deployment base is `/mark-to-go/`. Help uses hash routes such as
 `/?lang=zh#guide-oss`, so deep links work on GitHub Pages without a server rewrite.

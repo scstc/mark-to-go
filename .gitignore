@@ -22,5 +22,5 @@ data.json
 .DS_Store
 
 # Local website builds and design/browser verification
-site/dist/
+docs/site/dist/
 .taste-skill/

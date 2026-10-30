@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MarkToGo usage animation source</title>
+<style>html,body{margin:0;background:#0b1714}canvas{display:block;width:960px;height:540px}</style>
+<canvas id="animation" width="960" height="540" aria-label="MarkToGo illustrated usage demonstration"></canvas>
+<script>
+// Deterministic, dependency-free timeline. Call renderFrame(seconds, 'zh' | 'en')
+// to render one frame. GIF exports use 12 fps over 13 seconds.
+const canvas = document.getElementById('animation'), c = canvas.getContext('2d');
+const font = '"Segoe UI","Microsoft YaHei",sans-serif';
+const mono = 'Consolas,"Microsoft YaHei",monospace';
+const photo = new Image(), brand = new Image(), obsidian = new Image();
+photo.src = '../public/forest.jpg'; brand.src = '../public/icon.svg'; obsidian.src = '../public/obsidian-logo.svg';
+const clamp = (v,a=0,b=1) => Math.min(b,Math.max(a,v));
+const ease = v => { const p=clamp(v); return 1-Math.pow(1-p,3); };
+const lerp = (a,b,p) => a+(b-a)*ease(p);
+const T = (lang,zh,en) => lang==='zh'?zh:en;
+function box(x,y,w,h,r,color,stroke) { c.beginPath(); c.roundRect(x,y,w,h,r); c.fillStyle=color; c.fill(); if(stroke){c.strokeStyle=stroke;c.lineWidth=1;c.stroke();} }
+function txt(s,x,y,size=16,color='#ececf1',weight=400,family=font) {c.font=`${weight} ${size}px ${family}`;c.fillStyle=color;c.fillText(s,x,y);}
+function line(x,y,x2,y2,color='#35323f',width=1){c.beginPath();c.moveTo(x,y);c.lineTo(x2,y2);c.strokeStyle=color;c.lineWidth=width;c.stroke();}
+function check(x,y,size=15){c.beginPath();c.moveTo(x,y+size*.45);c.lineTo(x+size*.32,y+size*.8);c.lineTo(x+size,y);c.lineWidth=2.6;c.lineCap='round';c.lineJoin='round';c.strokeStyle='#a3efcb';c.stroke();}
+function cover(img,x,y,w,h){const s=Math.max(w/img.width,h/img.height),sw=w/s,sh=h/s;c.drawImage(img,(img.width-sw)/2,(img.height-sh)/2,sw,sh,x,y,w,h);}
+function thumb(x,y,w,h){c.save();c.beginPath();c.roundRect(x,y,w,h,6);c.clip();cover(photo,x,y,w,h);c.restore();}
+function arrow(x,y){line(x,y,x+28,y,'#a3efcb',2);line(x+21,y-6,x+28,y,'#a3efcb',2);line(x+21,y+6,x+28,y,'#a3efcb',2);}
+function button(s,x,y,w,selected=false,light=false){box(x,y,w,36,6,selected?'#a3efcb':light?'#40394d':'#28252f',selected?null:'#51475e');c.font=`600 14px ${font}`;txt(s,x+w/2-c.measureText(s).width/2,y+23,14,selected?'#112c20':'#eeeaf3',600);}
+function cursor(x,y,clickAge=-1){c.save();c.translate(x,y);if(clickAge>=0&&clickAge<.6){c.globalAlpha=1-clickAge/.6;c.beginPath();c.arc(0,0,7+clickAge*34,0,Math.PI*2);c.strokeStyle='#a3efcb';c.lineWidth=2;c.stroke();c.globalAlpha=1;}c.beginPath();c.moveTo(0,0);c.lineTo(0,26);c.lineTo(7,19);c.lineTo(13,31);c.lineTo(18,28);c.lineTo(12,17);c.lineTo(23,16);c.closePath();c.fillStyle='#fbfffd';c.fill();c.strokeStyle='#0f1b16';c.lineWidth=1.6;c.lineJoin='round';c.stroke();c.restore();}
+function shell(lang){
+  box(36,151,888,329,13,'#18161e','#3c3547');
+  box(36,151,888,35,13,'#22202a');box(36,173,888,13,0,'#22202a');
+  for(let i=0;i<3;i++){c.beginPath();c.arc(55+i*15,169,3.4,0,7);c.fillStyle=['#756780','#655c70','#5b5366'][i];c.fill();}
+  c.drawImage(obsidian,431,159,17,21);txt('Obsidian',455,174,12,'#bcb5c5',600);
+  line(36,186,924,186,'#36303f');
+}
+function side(lang,settings=false){
+  box(37,187,198,280,0,'#211e29');
+  txt(T(lang,settings?'设置':'笔记',settings?'Settings':'Notes'),57,216,13,'#a9a0b5',600);
+  if(settings){txt(T(lang,'常规选项','General'),57,247,15,'#bdb5c9');txt(T(lang,'第三方插件','Community plugins'),57,280,15,'#bdb5c9');box(47,297,178,36,6,'#55446e');c.drawImage(brand,58,305,20,20);txt('MarkToGo',88,321,15,'#f9f5ff',600);}
+  else {box(47,232,178,36,6,'#43364f');txt(T(lang,'森林漫步.md','Forest walk.md'),60,255,15,'#f6f1fb',600);txt(T(lang,'附件','Attachments'),58,303,13,'#a9a0b5');txt('forest.jpg',72,332,14,'#d0c8db');}
+}
+function providerStage(t,lang){
+  side(lang,true);txt(T(lang,'上传方式','Upload method'),263,222,21,'#f4eefb',600);
+  const s3=t>=1.7;
+  button(T(lang,'阿里云 OSS','Alibaba OSS'),263,241,180,!s3);
+  button('AWS S3',455,241,180,s3);button(T(lang,'PicList（备选）','PicList (alternative)'),647,241,246,false);
+  const labels=[T(lang,'地域 / 区域','Region'), 'Bucket',T(lang,'密钥','Credentials')];
+  const values=[s3?'us-east-1':'cn-hangzhou','demo-bucket',T(lang,'Obsidian 秘密存储','Obsidian secret storage')];
+  for(let i=0;i<3;i++){const x=263+i*210;txt(labels[i],x,310,13,'#aaa0b6');box(x,321,198,39,6,'#25212d','#494052');txt(values[i],x+12,346,i===2?13:14,'#dfd7e9');}
+  check(267,393,13);txt(T(lang,'桶与密钥已配置 · 无需 PicList 或额外 Node.js','Bucket and credentials configured · No separate PicList or Node.js'),291,405,15,'#bfe6cf');
+  txt(T(lang,'一次配置，之后直接分享','Configure once. Then just share.'),263,447,14,'#a79eb4');
+  if(t<1.55){const p=ease((t-.15)/.65);cursor(lerp(806,340,p),lerp(436,259,p),t-.95);}else{const p=ease((t-1.5)/.45);cursor(lerp(340,521,p),lerp(259,259,p),t-1.95);}
+}
+function noteContent(lang){
+  side(lang);txt(T(lang,'周末，去森林','A walk through the forest'),268,224,24,'#f2edf8',600);
+  txt(T(lang,'把这一刻，留在笔记里。','A small moment, kept in a note.'),268,252,15,'#b9b0c8');
+  thumb(268,271,358,124);box(268,410,358,32,5,'#26222f');txt('![[forest.jpg]]',280,432,14,'#c6a6f3',500,mono);
+  txt(T(lang,'本地附件','Local attachment'),657,294,13,'#a79bb6');
+  box(657,308,220,67,8,'#292331','#483b59');txt('forest.jpg',675,335,16,'#ede3fa',600);txt(T(lang,'留在你的 Vault','Stays in your vault'),675,359,13,'#b3a5c1');
+}
+function noteStage(t,lang){
+  const u=t-3.2;noteContent(lang);
+  if(u>.38&&u<2.55){
+    const p=ease((u-.38)/.2);c.save();c.globalAlpha=p;c.translate(0,(1-p)*8);box(123,274,245,167,8,'#2b2633','#655176');
+    txt(T(lang,'在新标签页中打开','Open in new tab'),140,303,14,'#c4bbd0');txt(T(lang,'重命名','Rename'),140,333,14,'#c4bbd0');line(135,347,354,347,'#494052');
+    if(u>1.0)box(130,354,231,39,5,'#6a4a8b');c.drawImage(brand,141,365,19,19);txt('MarkToGo',171,380,16,'#fff',600);
+    txt(T(lang,'生成分享版 Markdown','Prepare shareable Markdown'),141,417,12,'#b7aac5');c.restore();
+  }
+  if(u>2.55){box(352,348,365,61,9,'#282430','#5f4b75');txt(T(lang,'正在检查图片…','Checking referenced images…'),373,385,16,'#d9c6f1');}
+  if(u<.65){cursor(lerp(521,141,u/.48),lerp(259,250,u/.48),u-.45);}else{cursor(lerp(141,250,(u-.75)/.65),lerp(250,374,(u-.75)/.65),u-1.7);}
+}
+function transferStage(t,lang){
+  const u=t-6.5, done=u>=2.2;
+  txt(T(lang,'将图片地址写入分享副本','Link images in the shared copy'),73,224,21,'#f1eaf9',600);
+  txt(T(lang,'原笔记','Original note'),76,259,13,'#bcb1cb',600);txt(T(lang,'分享版 Markdown','Shareable Markdown'),537,259,13,'#b6d8c4',600);
+  box(72,274,352,149,9,'#25212d','#50425f');box(535,274,352,149,9,'#1b3128','#47745d');
+  thumb(87,288,98,89);thumb(550,288,98,89);
+  txt('forest.jpg',202,310,16,'#f4eafb',600);txt(T(lang,'本地图片嵌入','Local image embed'),202,337,13,'#b7aac6');txt('![[forest.jpg]]',89,406,15,'#c7a7ed',500,mono);
+  txt('forest.jpg',665,310,16,'#e7f9ed',600);txt('AWS S3',665,337,13,'#b3d9c2');txt('https://images.example.com/',552,392,13,'#b9edcc',500,mono);txt('s3/forest.jpg',552,410,13,'#b9edcc',500,mono);
+  arrow(453,345);const p=clamp(u/2.1);c.beginPath();c.arc(452+39*p,345,4,0,7);c.fillStyle='#c7f8df';c.fill();
+  box(72,443,815,4,2,'#39313e');box(72,443,Math.max(4,815*ease(u/2.2)),4,2,'#a3efcb');
+  if(done){check(747,219,12);txt(T(lang,'1 张图片已就绪','1 image linked'),769,230,13,'#a3efcb',600);}
+  else txt(T(lang,'正在处理图片 1/1…','Processing image 1/1…'),697,230,13,'#c7b6dd');
+}
+function resultStage(t,lang){
+  const u=t-9.5;noteContent(lang);box(37,187,886,292,0,'#100d16c9');
+  box(179,203,603,259,12,'#2a2433','#6a557f');
+  txt(T(lang,'MarkToGo · 分享版已准备好','MarkToGo · Ready to share'),205,238,23,'#f8f2ff',600);
+  txt(T(lang,'森林漫步.md','Forest walk.md'),205,266,15,'#cfc2dc');txt(T(lang,'新上传 1 个资源，复用 0 个资源。','New uploads: 1. Reused: 0.'),205,291,14,'#b9acc8');
+  check(207,310,13);txt(u>2.05?T(lang,'文件已复制，可粘贴 .md 附件。','File copied. Paste the .md attachment.'):T(lang,'Markdown 全文已自动复制。','Full Markdown text copied automatically.'),234,324,16,'#b8efd0',600);
+  txt(T(lang,'复制文件使用临时分享副本，仅支持 Windows。','Copy file uses a temporary sharing copy. Windows only.'),205,350,13,'#c6b5d9');
+  txt(T(lang,'尚未保存到导出目录。','Not saved to your export folder.'),205,375,13,'#ab9cbf');
+  button(T(lang,'保存到 Downloads','Save to Downloads'),205,394,220,false);
+  button(T(lang,'复制文本','Copy text'),437,394,139,false);
+  button(T(lang,u>2.05?'文件已复制':'复制文件',u>2.05?'File copied':'Copy file'),588,394,167,true);
+  if(u<1.55){cursor(lerp(690,499,u/.85),lerp(455,412,u/.85),u-.93);}else{cursor(lerp(499,673,(u-1.5)/.45),412,u-2.05);}
+}
+window.renderFrame=function(seconds,lang='en'){
+  const t=((seconds%13)+13)%13, stage=t<3.2?0:t<6.5?1:t<9.5?2:3;
+  c.clearRect(0,0,960,540);box(0,0,960,540,0,'#0b1714');c.drawImage(brand,37,26,27,27);txt('MarkToGo',75,47,20,'#edf6ef',700);
+  txt(T(lang,'使用演示 · 模拟数据','USAGE DEMO · SAMPLE DATA'),668,45,12,'#99b6a5',500);
+  const titles=[T(lang,'选择一种上传方式','Choose your uploader'),T(lang,'右键笔记，选择 MarkToGo','Right-click your note. Choose MarkToGo.'),T(lang,'图片随文同行','Your images go with your note.'),T(lang,'复制文字，或分享文件','Copy the text, or share a file.')];
+  txt(titles[stage],37,91,28,'#f0f7f2',650);
+  const steps=[T(lang,'连接图床','Connect'),T(lang,'分享笔记','Share'),T(lang,'转换图片','Link images'),T(lang,'复制分享','Copy')];
+  for(let i=0;i<4;i++){const x=37+i*225;box(x,115,193,3,2,i<=stage?'#a3efcb':'#2a4035');txt(steps[i],x,137,12,i===stage?'#d7f7e5':'#8faa99',i===stage?600:400);}
+  shell(lang);const start=[0,3.2,6.5,9.5][stage], a=stage===0?1:ease((t-start)/.28);
+  c.save();c.globalAlpha=a;c.translate((1-a)*14,0);[providerStage,noteStage,transferStage,resultStage][stage](t,lang);c.restore();
+  check(39,505,13);txt(T(lang,'原笔记和附件始终保留','Your original note and attachments stay unchanged.'),62,517,15,'#bdd9c8',500);
+  txt(T(lang,'仅演示，不执行上传','Illustration only. No upload.'),705,517,12,'#8fa797');
+};
+window.ready=Promise.all([photo.decode(),brand.decode(),obsidian.decode()]).then(()=>{
+ const query=new URLSearchParams(location.search),lang=query.get('lang')==='zh'?'zh':'en';
+ if(query.has('frame')) window.renderFrame(Number(query.get('frame')),lang);
+ else { const start=performance.now();const frame=now=>{window.renderFrame((now-start)/1000,lang);requestAnimationFrame(frame);};requestAnimationFrame(frame); }
+});
+</script>
+</html>

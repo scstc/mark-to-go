@@ -4,6 +4,8 @@ import { guides, installUrl, repository, text } from './content';
 import type { Language, GuideId } from './content';
 import type { ClickSparkHandle } from './components/react-bits/ClickSpark';
 import LatestRelease from './components/LatestRelease';
+import ReleaseHistory from './components/ReleaseHistory';
+import UsageDemo from './components/UsageDemo';
 import './button-effects.css';
 
 const TechText = lazy(() => import('./components/react-bits/TechText'));
@@ -93,7 +95,7 @@ function Home({ language, motion }: { language: Language; motion: boolean }) {
         <p className="hero-statement">{t('让笔记自由出发', 'Your notes. Ready to go.')}</p>
         <p className="hero-description">{t('把 Obsidian 笔记变成可分享的 Markdown。图片一起走，原文留在原处。', 'Share your Obsidian notes as portable Markdown. Images go with them. Originals stay with you.')}</p>
         <div className="hero-actions"><InstallLink language={language} motion={motion} /><a className="button secondary" href="#guide-install">{t('阅读使用手册', 'Read the guide')} <Arrow /></a></div>
-        <LatestRelease language={language} />
+        <div className="hero-release-links"><LatestRelease language={language} /><a className="plain-link release-history-link" href="#releases">{t('版本历史', 'Release history')} <Arrow /></a></div>
         <p className="hero-footnote">{t('免费开源 · 适用于 Obsidian 桌面版', 'Free and open source · Obsidian desktop')}</p>
       </div>
       <div className="hero-art" aria-label={t('笔记与图片一起传递的动态插画', 'Animated illustration of notes and images travelling together')}>
@@ -108,11 +110,12 @@ function Home({ language, motion }: { language: Language; motion: boolean }) {
     </section>
 
     <section id="demo" className="demo-section section-shell"><Reveal motion={motion} className="section-heading"><h2>{t('试着分享一篇', 'See a note travel')}</h2><p>{t('在原笔记和分享版之间切换，看看图片地址如何改变。', 'Switch between the original and shared note. Watch the image reference change.')}</p></Reveal><Demo language={language} /></section>
+    <UsageDemo language={language} motion={motion} />
 
-    <section className="setup-section section-shell"><Reveal motion={motion} className="setup-intro"><h2>{t('连接你的图床', 'Your storage. Your choice.')}</h2><p>{t('推荐 OSS 或 AWS S3 直连，无需额外安装 PicList 或 Node.js；目前可在开发版体验。PicList 作为备选，已有配置升级后继续沿用。', 'We recommend direct OSS or AWS S3 uploads, with no separate PicList or Node.js installation. Available in the development build. PicList is an alternative, and existing settings are preserved on upgrade.')}</p><a className="plain-link" href="#guide-install">{t('从安装开始', 'Start with installation')} <Arrow /></a></Reveal>
+    <section className="setup-section section-shell"><Reveal motion={motion} className="setup-intro"><h2>{t('连接你的图床', 'Your storage. Your choice.')}</h2><p>{t('26.4.5 起支持 OSS 和 AWS S3 直连，推荐优先使用，无需额外安装 PicList 或 Node.js。PicList 作为备选，已有配置升级后继续沿用。', 'Direct OSS and AWS S3 uploads are available from 26.4.5 and are recommended, with no separate PicList or Node.js installation. PicList is an alternative, and existing settings are preserved on upgrade.')}</p><a className="plain-link" href="#guide-install">{t('从安装开始', 'Start with installation')} <Arrow /></a></Reveal>
       <div className="provider-list">{[
-        ['oss', t('阿里云 OSS', 'Alibaba Cloud OSS'), t('填写桶与密钥，直接上传', 'Connect your bucket and upload directly'), t('推荐直连 · 开发版预览', 'Recommended · Direct upload · Development preview')],
-        ['s3', 'AWS S3', t('支持官方区域与 CloudFront 地址', 'AWS regions and your CloudFront domain'), t('推荐直连 · 开发版预览', 'Recommended · Direct upload · Development preview')],
+        ['oss', t('阿里云 OSS', 'Alibaba Cloud OSS'), t('填写桶与密钥，直接上传', 'Connect your bucket and upload directly'), t('推荐直连 · 26.4.5 起支持', 'Recommended · Available since 26.4.5')],
+        ['s3', 'AWS S3', t('支持官方区域与 CloudFront 地址', 'AWS regions and your CloudFront domain'), t('推荐直连 · 26.4.5 起支持', 'Recommended · Available since 26.4.5')],
         ['piclist', 'PicList', t('沿用熟悉的图床与插件', 'Keep your hosts and PicList plugins'), t('备选方式 · 稳定版已支持', 'Alternative · Available in the stable release')],
       ].map(([id, name, detail, availability]) => {
         const link = <a href={`#guide-${id}`} className="provider-link"><div><h3>{name}</h3><p>{detail}</p><span>{availability}</span></div><Arrow /></a>;
@@ -151,8 +154,10 @@ export default function App() {
   const sparkRef = useRef<ClickSparkHandle>(null);
   const t = (zh: string, en: string) => text(language, zh, en);
   const isGuide = route.startsWith('guide-');
+  const isReleases = route === 'releases';
+  const isHome = !isGuide && !isReleases;
   const spark = (target: EventTarget, x?: number, y?: number) => {
-    if (!motion || isGuide || !(target instanceof Element)) return;
+    if (!motion || !isHome || !(target instanceof Element)) return;
     const control = target.closest('a, button, summary');
     const root = appRef.current;
     if (!control || !root || control.matches(':disabled, .skip-link')) return;
@@ -167,19 +172,19 @@ export default function App() {
   }, []);
   useEffect(() => {
     document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
-    const page = isGuide ? guides(language).find(guide => guide.id === route.slice(6))?.title : t('让笔记自由出发', 'Your notes. Ready to go.');
+    const page = isGuide ? guides(language).find(guide => guide.id === route.slice(6))?.title : isReleases ? t('版本发布历史', 'Release history') : t('让笔记自由出发', 'Your notes. Ready to go.');
     document.title = `MarkToGo · ${page ?? t('使用手册', 'User guide')}`;
     try { localStorage.setItem('mark-to-go-language', language); } catch { /* The site works without storage. */ }
     const url = new URL(location.href); url.searchParams.set('lang', language); history.replaceState(null, '', url);
-  }, [language, route, isGuide]);
+  }, [language, route, isGuide, isReleases]);
   useEffect(() => {
     if (route === 'demo') document.getElementById('demo')?.scrollIntoView({ behavior: motion ? 'smooth' : 'instant' });
     else window.scrollTo({ top: 0, behavior: 'instant' });
   }, [route]);
-  return <div ref={appRef} className="site-app" data-page={isGuide ? 'guide' : 'home'} data-motion={motion} onPointerDownCapture={event => { if (event.isPrimary && event.button === 0) spark(event.target, event.clientX, event.clientY); }} onClickCapture={event => { if (event.detail === 0) spark(event.target); }}>
-    {motion && !isGuide && <Suspense fallback={null}><ClickSpark ref={sparkRef} className="button-sparks" style={{ position: 'absolute', inset: 0, height: 'auto', pointerEvents: 'none', zIndex: 20, overflow: 'hidden' }} sparkColor={['#63d3a2', '#b8ffdc', '#ffffff']} sparkSize={12} sparkRadius={46} sparkCount={10} duration={600} sparkWidth={2.5} glow={0.3} ring /></Suspense>}
+  return <div ref={appRef} className="site-app" data-page={isGuide ? 'guide' : isReleases ? 'releases' : 'home'} data-motion={motion} onPointerDownCapture={event => { if (event.isPrimary && event.button === 0) spark(event.target, event.clientX, event.clientY); }} onClickCapture={event => { if (event.detail === 0) spark(event.target); }}>
+    {motion && isHome && <Suspense fallback={null}><ClickSpark ref={sparkRef} className="button-sparks" style={{ position: 'absolute', inset: 0, height: 'auto', pointerEvents: 'none', zIndex: 20, overflow: 'hidden' }} sparkColor={['#63d3a2', '#b8ffdc', '#ffffff']} sparkSize={12} sparkRadius={46} sparkCount={10} duration={600} sparkWidth={2.5} glow={0.3} ring /></Suspense>}
     <a className="skip-link" href="#main" onClick={event => { event.preventDefault(); document.getElementById('main')?.focus(); document.getElementById('main')?.scrollIntoView(); }}>{t('跳转到正文', 'Skip to content')}</a><header className="site-header"><a href="#home" className="wordmark"><img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width="30" height="30" />MarkToGo</a><nav className="site-navigation" aria-label={t('主导航', 'Main navigation')}><a href="#demo">{t('体验', 'Demo')}</a><a href="#guide-install" aria-current={isGuide ? 'page' : undefined}>{t('使用手册', 'Guide')}</a><a href={repository} target="_blank" rel="noopener noreferrer">GitHub <Arrow external /></a></nav><div className="header-tools"><button className="motion-toggle" aria-pressed={!motion} onClick={() => setPaused(value => !value)} disabled={reduced} title={t('切换动态效果', 'Toggle animation')}>{motion ? t('暂停动效', 'Pause motion') : t('静态模式', 'Motion off')}</button><div className="language-toggle" aria-label={t('网站语言', 'Website language')}><button aria-pressed={language === 'zh'} onClick={() => setLanguage('zh')}>中</button><button aria-pressed={language === 'en'} onClick={() => setLanguage('en')}>EN</button></div></div></header>
-    <main id="main" tabIndex={-1}>{isGuide ? <GuidePage language={language} id={route.slice(6) as GuideId} /> : <Home language={language} motion={motion} />}</main>
-    <footer className="site-footer section-shell"><div><a href="#home" className="footer-brand">MarkToGo</a><p>{t('让笔记走得更远', 'Good notes travel.')}</p></div><div className="footer-links"><a href="#guide-privacy">{t('隐私与权限', 'Privacy')}</a><a href={repository + '/releases'} target="_blank" rel="noopener noreferrer">{t('版本记录', 'Releases')}</a><a href="https://reactbits.dev/" target="_blank" rel="noopener noreferrer">{t('动效来自 React Bits', 'Motion by React Bits')}</a><a href={`${import.meta.env.BASE_URL}react-bits-license.txt`}>{t('组件许可', 'Component license')}</a></div><span>Simple · 0-BSD</span></footer>
+    <main id="main" tabIndex={-1}>{isGuide ? <GuidePage language={language} id={route.slice(6) as GuideId} /> : isReleases ? <ReleaseHistory language={language} /> : <Home language={language} motion={motion} />}</main>
+    <footer className="site-footer section-shell"><div><a href="#home" className="footer-brand">MarkToGo</a><p>{t('让笔记走得更远', 'Good notes travel.')}</p></div><div className="footer-links"><a href="#guide-privacy">{t('隐私与权限', 'Privacy')}</a><a href="#releases" aria-current={isReleases ? 'page' : undefined}>{t('版本记录', 'Releases')}</a><a href="https://reactbits.dev/" target="_blank" rel="noopener noreferrer">{t('动效来自 React Bits', 'Motion by React Bits')}</a><a href={`${import.meta.env.BASE_URL}react-bits-license.txt`}>{t('组件许可', 'Component license')}</a></div><span>Simple · 0-BSD</span></footer>
   </div>;
 }

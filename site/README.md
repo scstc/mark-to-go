@@ -28,9 +28,17 @@ The self-hosted forest photograph and its CC0 source are listed in the asset not
 
 The homepage reads public release metadata from the GitHub API to display the latest
 published version. If that request fails, its link still opens GitHub's latest release.
+The `#releases` page reads published releases, dates, notes and asset links from
+GitHub. It excludes draft and prerelease entries, renders plain-text highlights,
+and falls back to verified records in `src/release-data.ts` when GitHub is unavailable.
+Refresh that snapshot from the actual release after publishing a new version.
 No vault or demo content is sent to GitHub.
 
+The bilingual 960 x 540 usage walkthrough uses self-hosted GIFs and PNG posters.
+Its local pause button, the global motion control and reduced-motion preference
+all switch to a static poster. The caption identifies it as an illustrated workflow.
+
 The guide recommends direct OSS/S3 uploads first, with PicList as an alternative.
-The public guide distinguishes the current stable PicList release from OSS/S3
-features that remain in development. Update this availability copy when releasing
-the plugin. The website workflow only deploys the website; it never publishes a plugin release.
+Direct OSS/S3 uploads are available from plugin version 26.4.5 and require Obsidian
+1.11.4+. Existing upload choices and PicList configuration are preserved on upgrade.
+The website workflow only deploys the website; it never publishes a plugin release.

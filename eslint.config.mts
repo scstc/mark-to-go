@@ -13,6 +13,8 @@ export default defineConfig(
 		'package.json',
 		'package-lock.json',
 		'tsconfig.json',
+		'site/**',
+		'.taste-skill/**',
 	]),
 	{
 		languageOptions: {

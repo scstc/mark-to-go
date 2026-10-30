@@ -2,19 +2,32 @@
 
 <img src="assets/icon.svg" alt="MarkToGo MTG icon" width="80" height="80">
 
-[简体中文](README.zh-CN.md) · [Obsidian directory](https://community.obsidian.md/plugins/mark-to-go)
+[简体中文](README.zh-CN.md) · [Website](https://scstc.github.io/mark-to-go/?lang=en) · [User guide](https://scstc.github.io/mark-to-go/?lang=en#guide-install) · [Release history](https://scstc.github.io/mark-to-go/?lang=en#releases) · [Latest release](https://github.com/scstc/mark-to-go/releases/latest) · [Obsidian directory](https://community.obsidian.md/plugins/mark-to-go)
 
 Share an Obsidian note without sending its images separately. **MarkToGo uploads local images through PicList or directly to Alibaba Cloud OSS or AWS S3 and copies Markdown with online image links. Your original note stays unchanged.**
 
+## Usage walkthrough
+
+<a href="https://scstc.github.io/mark-to-go/usage-demo-en-animated.png?v=hd-2880">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="site/public/usage-demo-en.png">
+    <img src="site/public/usage-demo-en-animated.png" alt="MarkToGo walkthrough: choose OSS or S3, right-click a note, convert local image links and copy the shared Markdown or a file." width="960">
+  </picture>
+</a>
+
+A 13-second, 2880 × 1620 animated PNG using a sample note and preset storage; it performs no uploads. **Copy file** is available on Windows. Reduced-motion preferences show a static preview.
+
+[Open the full-size animation](https://scstc.github.io/mark-to-go/usage-demo-en-animated.png?v=hd-2880) · [Play or pause on the website](https://scstc.github.io/mark-to-go/?lang=en#demo)
+
 ## Install
 
-Find **MarkToGo** in **Settings → Community plugins → Browse**, then install and enable it. Alternatively, download `main.js` and `manifest.json` from [GitHub Releases](https://github.com/scstc/mark-to-go/releases) into `<Vault>/.obsidian/plugins/mark-to-go/`.
+Find **MarkToGo** in **Settings → Community plugins → Browse**, then install and enable it. Alternatively, download `main.js`, `manifest.json`, and `styles.css` from the [latest GitHub release](https://github.com/scstc/mark-to-go/releases/latest) into `<Vault>/.obsidian/plugins/mark-to-go/`.
 
 Desktop only. Windows has been tested; macOS and Linux have not yet been tested.
 
 ## Choose an upload method
 
-Select **Settings → MarkToGo → Upload method**. Existing installations retain their selected provider, saved paths and preferences; installations upgrading from PicList-only versions keep PicList. Switching keeps all three configurations.
+Select **Settings → MarkToGo → Upload method**. We recommend a direct OSS or AWS S3 connection, with PicList as an alternative. Existing installations retain their selected provider, saved paths and preferences; installations upgrading from PicList-only versions keep PicList. Switching keeps all three configurations.
 
 ### Alibaba Cloud OSS (direct)
 

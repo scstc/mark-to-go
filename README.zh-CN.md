@@ -2,19 +2,32 @@
 
 <img src="assets/icon.svg" alt="MarkToGo MTG 图标" width="80" height="80">
 
-[English](README.md) · [Obsidian 插件目录](https://community.obsidian.md/plugins/mark-to-go)
+[English](README.md) · [官网](https://scstc.github.io/mark-to-go/?lang=zh) · [使用手册](https://scstc.github.io/mark-to-go/?lang=zh#guide-install) · [版本历史](https://scstc.github.io/mark-to-go/?lang=zh#releases) · [最新版本](https://github.com/scstc/mark-to-go/releases/latest) · [Obsidian 插件目录](https://community.obsidian.md/plugins/mark-to-go)
 
 分享 Obsidian 笔记时，不再需要把图片一起打包发给对方。**MarkToGo 通过 PicList、阿里云 OSS 或 AWS S3 上传本地图片，生成使用在线图片地址的 Markdown 并复制到剪贴板，原笔记保持不变。**
 
+## 使用演示
+
+<a href="https://scstc.github.io/mark-to-go/usage-demo-zh-animated.png?v=hd-2880">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="site/public/usage-demo-zh.png">
+    <img src="site/public/usage-demo-zh-animated.png" alt="MarkToGo 使用流程：选择 OSS 或 S3，右键笔记，将本地图片转为在线链接，再复制分享版 Markdown 或文件。" width="960">
+  </picture>
+</a>
+
+2880 × 1620 高清 PNG 动画，约 13 秒循环，使用示例笔记和预设图床配置，不执行真实上传。**复制文件** 仅支持 Windows；系统开启减少动画时显示静态预览。
+
+[放大查看高清动画](https://scstc.github.io/mark-to-go/usage-demo-zh-animated.png?v=hd-2880) · [到官网播放或暂停](https://scstc.github.io/mark-to-go/?lang=zh#demo)
+
 ## 安装插件
 
-在 **设置 → 第三方插件 → 浏览** 中搜索 **MarkToGo**，安装并启用。也可以从 [GitHub Releases](https://github.com/scstc/mark-to-go/releases) 下载 `main.js` 和 `manifest.json`，放到 `<Vault>/.obsidian/plugins/mark-to-go/`。
+在 **设置 → 第三方插件 → 浏览** 中搜索 **MarkToGo**，安装并启用。也可以从 [GitHub 最新版本](https://github.com/scstc/mark-to-go/releases/latest) 下载 `main.js`、`manifest.json` 和 `styles.css`，放到 `<Vault>/.obsidian/plugins/mark-to-go/`。
 
 仅支持桌面版。Windows 已测试，macOS / Linux 尚未实测。
 
 ## 选择上传方式
 
-在 **设置 → MarkToGo → 上传方式** 中选择。升级保留之前选中的上传方式、路径和偏好；从仅支持 PicList 的版本升级时继续使用 PicList，来回切换保留三套配置。
+在 **设置 → MarkToGo → 上传方式** 中选择，推荐 OSS 或 AWS S3 直连，PicList 作为备选。升级保留之前选中的上传方式、路径和偏好；从仅支持 PicList 的版本升级时继续使用 PicList，来回切换保留三套配置。
 
 ### 阿里云 OSS 直传
 

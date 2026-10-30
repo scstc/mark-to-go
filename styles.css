@@ -1,0 +1,14 @@
+.mark-to-go-upload-method {
+	flex-wrap: wrap;
+}
+
+.mark-to-go-upload-method .setting-item-control {
+	flex: 0 1 17em;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.mark-to-go-upload-method .setting-item-control select.dropdown {
+	width: 100%;
+	max-width: 100%;
+}

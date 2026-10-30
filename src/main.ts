@@ -3,10 +3,12 @@ import icon from '../assets/icon-monochrome.svg';
 import { realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
 import { clipboard, remote } from 'electron';
-import { DEFAULT_SETTINGS, MarkToGoSettingTab } from './settings';
+import { DEFAULT_SETTINGS, loadSettings, MarkToGoSettingTab } from './settings';
 import type { MarkToGoSettings } from './settings';
 import { expandHome } from './piclist';
 import { createCachedUploader } from './cached-uploader';
+import { createOssUploader } from './oss-uploader';
+import { createS3Uploader } from './s3-uploader';
 import { UPLOAD_CACHE_FILE, UploadCache } from './upload-cache';
 import { saveMarkdown } from './export';
 import { shareMarkdown } from './share';
@@ -35,7 +37,7 @@ export default class MarkToGoPlugin extends Plugin {
 		this.stopped = false;
 		addIcon(this.manifest.id, icon);
 		this.register(() => removeIcon(this.manifest.id));
-		this.settings = { ...DEFAULT_SETTINGS, ...await this.loadData() as Partial<MarkToGoSettings> };
+		this.settings = loadSettings(await this.loadData() as Partial<MarkToGoSettings> | null);
 		const adapter = this.app.vault.adapter;
 		if (!(adapter instanceof FileSystemAdapter)) throw new MarkToGoError('desktopRequired');
 		this.uploadCache = new UploadCache(resolve(adapter.getBasePath(), UPLOAD_CACHE_FILE));
@@ -133,17 +135,34 @@ export default class MarkToGoPlugin extends Plugin {
 		const notice = new Notice(this.t('preparing'), 0);
 		try {
 			const settings = { ...this.settings };
+			// Snapshot the credential with the settings; validate it only if local images need uploading.
+			let secret = '';
+			if (requireApiVersion('1.11.4')) {
+				if (settings.uploadProvider === 'oss') secret = this.app.secretStorage.getSecret(settings.ossSecretName) ?? '';
+				if (settings.uploadProvider === 's3') secret = this.app.secretStorage.getSecret(settings.s3SecretName) ?? '';
+			}
 			const name = file.name;
 			let cacheWarningShown = false;
 			const result = await shareMarkdown(await this.readLatest(file), {
 				translate: this.t,
 				resolve: (target) => this.resolveImage(target, file),
-				openUploader: () => createCachedUploader(settings, this.uploadCache, () => {
-					if (!this.stopped && !cacheWarningShown) {
-						cacheWarningShown = true;
-						new Notice(this.t('cacheWarning'), 12000);
+				openUploader: async () => {
+					const warn = (): void => {
+						if (!this.stopped && !cacheWarningShown) {
+							cacheWarningShown = true;
+							new Notice(this.t('cacheWarning'), 12000);
+						}
+					};
+					if (settings.uploadProvider === 'oss' || settings.uploadProvider === 's3') {
+						if (requireApiVersion('1.11.4')) {
+							return settings.uploadProvider === 's3'
+								? createS3Uploader(settings, secret, this.uploadCache, warn, controller.signal)
+								: createOssUploader(settings, secret, this.uploadCache, warn, controller.signal);
+						}
+						throw new MarkToGoError(settings.uploadProvider === 's3' ? 's3UpgradeRequired' : 'ossUpgradeRequired');
 					}
-				}, controller.signal),
+					return createCachedUploader(settings, this.uploadCache, warn, controller.signal);
+				},
 				copy: (content) => this.clipboard.write(ticket, async () => {
 					notice.setMessage(this.t('copying'));
 					clipboard.writeText(content);

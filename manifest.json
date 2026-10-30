@@ -1,9 +1,9 @@
 {
 	"id": "mark-to-go",
 	"name": "MarkToGo",
-	"version": "26.4.4",
+	"version": "26.4.5",
 	"minAppVersion": "1.0.0",
-	"description": "Export shareable Markdown with PicList-hosted images while preserving local notes.",
+	"description": "Export shareable Markdown with images hosted through PicList, Alibaba Cloud OSS or AWS S3 while preserving local notes.",
 	"author": "Simple",
 	"authorUrl": "https://github.com/scstc",
 	"isDesktopOnly": true

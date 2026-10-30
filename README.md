@@ -4,7 +4,7 @@
 
 [简体中文](README.zh-CN.md) · [Obsidian directory](https://community.obsidian.md/plugins/mark-to-go)
 
-Share an Obsidian note without sending its images separately. **MarkToGo uploads local images through PicList and copies Markdown with online image links. Your original note stays unchanged.**
+Share an Obsidian note without sending its images separately. **MarkToGo uploads local images through PicList or directly to Alibaba Cloud OSS or AWS S3 and copies Markdown with online image links. Your original note stays unchanged.**
 
 ## Install
 
@@ -12,7 +12,35 @@ Find **MarkToGo** in **Settings → Community plugins → Browse**, then install
 
 Desktop only. Windows has been tested; macOS and Linux have not yet been tested.
 
-## Set up PicList first
+## Choose an upload method
+
+Select **Settings → MarkToGo → Upload method**. Existing installations retain their selected provider, saved paths and preferences; installations upgrading from PicList-only versions keep PicList. Switching keeps all three configurations.
+
+### Alibaba Cloud OSS (direct)
+
+Requires Obsidian **1.11.4+**, an existing OSS bucket and a RAM AccessKey with `oss:PutObject` permission limited to your chosen prefix, for example `acs:oss:*:*:your-bucket/mark-to-go/*`. No PicList or separate Node.js installation is needed.
+
+1. Select **Alibaba Cloud OSS** and enter the region ID (such as `cn-hangzhou`), Bucket name and AccessKey ID.
+2. Select or create your **AccessKey Secret** using Obsidian secret storage. Plugin settings store only its reference name. Configure the secret separately on each device; do not paste it into a note or the upload cache.
+3. Keep the default **OSS folder** `mark-to-go/`, or choose your own. Optionally set a public HTTPS image base URL, including a path if needed. Otherwise, links use the official OSS endpoint.
+
+Links are permanent, unsigned URLs: your bucket policy or public image domain must allow anonymous image reads. The plugin does not change bucket or object ACLs. A custom image base URL affects links only; authenticated uploads always use the standard regional OSS HTTPS endpoint. STS and expiring signed links are not supported.
+
+Object names use a full SHA-256 hash of image bytes and extension. Different images with the same local filename get different names; identical bytes with the same extension reuse the same object. Original filenames are not sent as object names. Concurrent uploads or clearing the cache can write the same content-addressed object again; bucket versioning may retain additional versions. Images are streamed from temporary snapshots. Cancellation and timeouts stop the local request, but an object already accepted by OSS may remain.
+
+**Check local configuration** validates fields and secret availability without a network request. It does not confirm OSS permissions or anonymous image access; verify a shared image URL in a browser after your first export.
+
+### AWS S3 (direct)
+
+Requires Obsidian **1.11.4+**, an existing AWS S3 general purpose bucket and an IAM access key. Select **AWS S3**, enter the region (for example `us-east-1`), Bucket and **Access key ID**, then select or create the **Secret access key** in Obsidian secret storage. The default folder is `mark-to-go/`. No PicList or separate Node.js installation is needed.
+
+Grant only `s3:PutObject` on the target prefix, for example `arn:aws:s3:::your-bucket/mark-to-go/*` (`arn:aws-cn:s3:::` for AWS China). Buckets using SSE-KMS may also require KMS permissions. AWS China regions use `amazonaws.com.cn`. Dotted bucket names use path-style HTTPS to match AWS certificates.
+
+Permanent, unsigned image links need anonymous read access through your bucket policy or a public image domain such as CloudFront. Set **Public image base URL** to that HTTPS domain when needed. The plugin does not change Block Public Access, bucket policies or object ACLs. Uploads use AWS SigV4 and stream signed snapshot bytes to the official regional endpoint, while cache entries stay separate from PicList and OSS. Filenames use full content hashes, and original notes remain unchanged.
+
+This option supports standard AWS S3 endpoints and long-term IAM access keys. Custom S3-compatible endpoints, directory buckets, STS session tokens and expiring signed links are not supported. **Check local configuration** performs no network request and does not verify IAM or public read permissions.
+
+### PicList
 
 **PicList is an image uploader, not an image hosting service.** You need an image host of your own, such as an object storage bucket, and configure it in PicList.
 
@@ -67,7 +95,7 @@ The CLI's default `~/.piclist/config.json` is a different file. **Use the deskto
 
 ## Privacy
 
-Only an explicit export sends referenced local images, through your PicList CLI, to your configured image host. Note text is not uploaded to the image host, and MarkToGo collects no telemetry. MarkToGo is free; your chosen host may require an account or payment.
+Only an explicit export sends referenced local images through your PicList CLI to your configured image host, or directly to your chosen Alibaba Cloud OSS or AWS S3 bucket. Authentication uses the access key ID and a signature derived from the locally stored secret; the secret itself is not sent. Note text is not uploaded to the image host, and MarkToGo collects no telemetry. MarkToGo is free; your chosen host may require an account or payment.
 
 To upload and save exports, the plugin accesses Node.js/PicList, your PicList configuration and installed plugins, temporary files, and Downloads or your chosen export folder outside the vault. Temporary copies protect the original images and configuration. See the [advanced guide](docs/advanced.md) for details.
 

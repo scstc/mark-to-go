@@ -4,7 +4,7 @@
 
 [Quick start](../README.md) · [简体中文](advanced.zh-CN.md) · [GitHub Releases](https://github.com/scstc/mark-to-go/releases)
 
-Export shareable Markdown from Obsidian with images hosted through your local **PicList CLI**. Right-click a Markdown note and choose **MarkToGo** to upload its local images, replace their links in an export, and copy the complete Markdown to the clipboard. Your original note and attachments stay unchanged.
+Export shareable Markdown from Obsidian with images hosted through your local **PicList CLI** or directly in **Alibaba Cloud OSS** or **AWS S3**. Right-click a Markdown note and choose **MarkToGo** to upload its local images, replace their links in an export, and copy the complete Markdown to the clipboard. Your original note and attachments stay unchanged.
 
 MarkToGo is a desktop-only plugin with English and Simplified Chinese interfaces. Saving an exported file is optional. A shared cache can reuse image uploads across computers that sync the same vault.
 
@@ -13,16 +13,17 @@ The sharing workflow has been verified in actual use with a real cloud image hos
 ## Requirements
 
 - Obsidian desktop. Windows has been tested; macOS and Linux have not been tested yet.
-- An external Node.js installation and the **piclist** npm package: `npm install -g piclist`. Its CLI is named `picgo`; the original PicGo CLI and the desktop PicList executable are not substitutes.
-- Desktop PicList with a working default image host. Your image host may require an account or payment, depending on the provider you choose. MarkToGo itself requires neither.
+- For PicList: an external Node.js installation and the **piclist** npm package (`npm install -g piclist`), plus desktop PicList with a working default host. Its CLI is named `picgo`; the original PicGo CLI and desktop executable are not substitutes.
+- For direct OSS: Obsidian 1.11.4+, an existing bucket and a RAM AccessKey. See [OSS setup and permissions](../README.md#alibaba-cloud-oss-direct); no external Node.js or PicList is needed. Your host may require an account or payment.
+- For direct AWS S3: Obsidian 1.11.4+, a general purpose bucket and IAM access key with `s3:PutObject` permission. See [S3 setup and permissions](../README.md#aws-s3-direct). Secrets use Obsidian SecretStorage; standard AWS endpoints are supported, including China regions.
 
 ## Install
 
-Find **MarkToGo** in **Settings → Community plugins → Browse**, then install and enable it. For manual installation, download `main.js` and `manifest.json` from the latest [GitHub release](https://github.com/scstc/mark-to-go/releases) and place both files in `<Vault>/.obsidian/plugins/mark-to-go/`.
+Find **MarkToGo** in **Settings → Community plugins → Browse**, then install and enable it. For manual installation, download `main.js`, `manifest.json`, and `styles.css` from the latest [GitHub release](https://github.com/scstc/mark-to-go/releases) and place all three files in `<Vault>/.obsidian/plugins/mark-to-go/`.
 
 ## Use
 
-1. Configure your default image host in desktop PicList and confirm that it can upload an image.
+1. Choose an upload method in settings. Connect an OSS or AWS S3 bucket directly, or use your existing desktop PicList host as an alternative.
 2. Right-click the target Markdown note in the file explorer and choose **MarkToGo**, next to the **MTG** icon. A command for the current note is also available in the command palette.
 3. The plugin resolves local image references and uploads images that are not already cached. It reads the latest editor contents for an open note, including when you right-click a different note.
 4. The complete exported Markdown is copied to the clipboard. **No exported file is created automatically.**
@@ -64,6 +65,9 @@ HTML `<img>` elements, ordinary attachment links, and note links remain unchange
 | Setting | Default behavior |
 | --- | --- |
 | Language | Follow Obsidian; choose English or Simplified Chinese to override. Changes apply immediately to settings, menus, progress, and subsequent dialogs. |
+| Upload method | PicList for new installations; upgrades retain the selected provider. PicList, OSS and AWS S3 each keep their own configuration. |
+| OSS configuration | Shown only for OSS. Region, Bucket, AccessKey ID, a SecretStorage reference, folder prefix (default `mark-to-go/`) and optional public HTTPS image base URL. |
+| S3 configuration | Shown only for AWS S3. Region, Bucket, access key ID, a SecretStorage reference, folder prefix (default `mark-to-go/`) and optional public HTTPS image base URL, such as CloudFront. |
 | PicList CLI entry | Find `piclist/bin/picgo` automatically, or specify the full entry path or its npm-generated `picgo.cmd` / `picgo.ps1` wrapper. |
 | Node.js path | Find an external Node.js executable automatically; set a full path if discovery fails. |
 | PicList configuration file | Use desktop PicList's configuration; on Windows, `%APPDATA%\piclist\data.json`. A custom path is supported. |
@@ -73,7 +77,7 @@ HTML `<img>` elements, ordinary attachment links, and note links remain unchange
 
 Paths support spaces, Unicode, `~`, and `%ENVIRONMENT_VARIABLES%`. Obsidian launched from the desktop can have a different PATH from a terminal. Specify full paths when automatic discovery fails.
 
-**Check local configuration** performs read-only checks of the CLI entry, a fixed `node --version` command, the configuration JSON/default host identifier, export folder metadata and Windows PowerShell availability. It never runs PicList or its plugins, writes test files, uploads images or accesses the clipboard. It does not verify credentials, network access, execution policy, clipboard availability or hard-link support. Settings are searchable on Obsidian 1.13+; older versions keep the traditional settings tab.
+**Check local configuration** validates the selected uploader. OSS/S3 checks validate fields and local secret availability without starting PicList. PicList checks read the CLI entry, a fixed `node --version` result and the configuration JSON/default host identifier. Shared checks inspect export folder metadata and Windows PowerShell availability. They never run PicList or its plugins, write test files, upload images or access the clipboard. They do not verify cloud permissions, network access, execution policy, clipboard availability or hard-link support. Settings are searchable on Obsidian 1.13+; older versions keep the traditional settings tab.
 
 Default desktop PicList configuration paths:
 
@@ -87,7 +91,7 @@ Desktop PicList's `data.json` differs from the Core default `~/.piclist/config.j
 
 ## Shared upload cache
 
-Mappings are stored in **`MarkToGo/upload-cache.json`**, relative to the vault root. The plugin creates this independent folder automatically; it does not depend on the name or location of your attachments folder. The cache contains a format identifier, a version, and hash-to-URL mappings, without the raw PicList configuration or credentials.
+Mappings are stored in **`MarkToGo/upload-cache.json`**, relative to the vault root. The plugin creates this independent folder automatically; it does not depend on the name or location of your attachments folder. The cache contains a format identifier, a version, and hash-to-URL mappings, without raw configuration or credentials. OSS/S3 entries are isolated by provider, region, bucket, prefix, account ID and public base URL. Existing PicList entries remain compatible. Rotating a secret for the same account does not invalidate cached URLs.
 
 - Image content, extension, and effective uploader/processing configuration determine identity. Moving or renaming an image does not prevent reuse; changing its contents or relevant configuration causes another upload.
 - Machine-specific CLI, Node.js, and configuration paths are excluded. Known UI settings and named-configuration device IDs are also excluded. Different image hosts, credentials, processing rules, or PicList plugin settings may produce distinct identities.
@@ -102,7 +106,7 @@ Uploads made before caching was enabled are not imported automatically.
 
 ## Privacy and external access
 
-**Network access occurs only when you explicitly export a note with uncached local images.** The local PicList CLI sends those referenced image files to the image host configured in your PicList setup. The exact provider, destination, and its account or payment requirements are determined by your configuration. Markdown note text is not sent to the image host. MarkToGo does not collect telemetry or operate a sync service.
+**Network access occurs only when you explicitly export a note with uncached local images.** PicList sends those images to its configured host, or the plugin uploads directly to your selected OSS or AWS S3 bucket over HTTPS with the provider's V4 authentication. Requests contain your access key ID and a derived signature, not the secret itself. Secrets are resolved from Obsidian SecretStorage; plugin settings retain only their references. Markdown text is not sent to the image host. MarkToGo does not collect telemetry or operate a sync service.
 
 Access outside the vault is limited to the external Node.js/PicList executables, PicList configuration and installed plugins, temporary staging folders, and the Downloads or custom export folder. These are needed to run your configured uploader and save an export when requested.
 
@@ -135,7 +139,7 @@ npm run lint
 
 `npm test` does not require PicList. `npm run test:piclist` requires the installed `piclist` CLI and uses only synthetic files, temporary local storage, and a synthetic uploader plugin. It does not use your cloud account or upload your attachments.
 
-Copy the built `main.js` and `manifest.json` into the plugin directory for local testing, then reload only MarkToGo. Do not commit generated `main.js`, `node_modules/`, user configuration, or credentials.
+Copy the built `main.js`, `manifest.json`, and `styles.css` into the plugin directory for local testing, then reload only MarkToGo. Do not commit generated `main.js`, `node_modules/`, user configuration, or credentials.
 
 The color MTG icon is `assets/icon.svg`, with a 512-pixel PNG at `assets/icon.png`. The theme-aware monochrome menu icon, `assets/icon-monochrome.svg`, is bundled into the plugin and needs no separate installation.
 
@@ -145,7 +149,7 @@ The color MTG icon is `assets/icon.svg`, with a 512-pixel PNG at `assets/icon.pn
 - Support export destinations without hard-link capability.
 - Export Excalidraw and Mermaid directly as images.
 - Support HTML images and additional attachment types.
-- Adopt Obsidian's declarative settings API for global settings search; the current settings page uses the standard API.
+- Settings support Obsidian 1.13+ global settings search and retain the traditional settings tab on older versions.
 - Add centralized coordination only if strict cross-device upload deduplication is needed.
 
 ## References

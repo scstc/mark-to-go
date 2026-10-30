@@ -1,7 +1,7 @@
 {
 	"name": "mark-to-go",
-	"version": "26.4.4",
-	"description": "Export shareable Markdown with PicList-hosted images while preserving local notes.",
+	"version": "26.4.5",
+	"description": "Export shareable Markdown with images hosted through PicList, Alibaba Cloud OSS or AWS S3 while preserving local notes.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {

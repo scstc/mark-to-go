@@ -4,7 +4,7 @@
 
 [English](README.md) · [Obsidian 插件目录](https://community.obsidian.md/plugins/mark-to-go)
 
-分享 Obsidian 笔记时，不再需要把图片一起打包发给对方。**MarkToGo 通过 PicList 上传本地图片，生成使用在线图片地址的 Markdown 并复制到剪贴板，原笔记保持不变。**
+分享 Obsidian 笔记时，不再需要把图片一起打包发给对方。**MarkToGo 通过 PicList、阿里云 OSS 或 AWS S3 上传本地图片，生成使用在线图片地址的 Markdown 并复制到剪贴板，原笔记保持不变。**
 
 ## 安装插件
 
@@ -12,7 +12,35 @@
 
 仅支持桌面版。Windows 已测试，macOS / Linux 尚未实测。
 
-## 先配置 PicList
+## 选择上传方式
+
+在 **设置 → MarkToGo → 上传方式** 中选择。升级保留之前选中的上传方式、路径和偏好；从仅支持 PicList 的版本升级时继续使用 PicList，来回切换保留三套配置。
+
+### 阿里云 OSS 直传
+
+需要 Obsidian **1.11.4+**、已创建的 OSS 桶，以及限定目标目录 `oss:PutObject` 权限的 RAM AccessKey，例如资源范围 `acs:oss:*:*:你的桶名/mark-to-go/*`。无需 PicList，也无需额外安装 Node.js。
+
+1. 选择 **阿里云 OSS**，填写地域 ID（例如 `cn-hangzhou`）、Bucket 名称和 AccessKey ID。
+2. 使用 Obsidian 秘密存储控件选择或新建 **AccessKey Secret**。插件配置只保存引用名称；每台设备单独配置，不要将密钥写入笔记或上传缓存。
+3. **OSS 存储目录** 默认 `mark-to-go/`，可自行修改。可选填公开 HTTPS 图片地址前缀，也支持包含路径；留空使用官方 OSS 地址。
+
+生成的是长期有效、不带签名的链接，需要桶策略或公开图片域名允许匿名读取。插件不会修改桶或对象 ACL。自定义图片地址前缀只影响分享链接，认证上传始终连接标准地域的 OSS 官方 HTTPS Endpoint。暂不支持 STS 和有时效的签名链接。
+
+对象名称使用图片内容与扩展名的完整 SHA-256 哈希。同名但内容不同的图片使用不同地址，内容和扩展名相同则复用同一对象，不将原始文件名作为对象名发送。并发上传或清空缓存后可能再次写入同一个内容对象，开启桶版本控制时可能保留额外版本。上传读取临时快照并使用文件流；取消或超时会停止本地请求，OSS 已接收的对象仍可能保留。
+
+**检查本地配置** 仅验证字段和密钥是否可用，不联网，不验证云端权限或图片匿名访问。首次导出后，请在浏览器中验证图片地址。
+
+### AWS S3 直传
+
+需要 Obsidian **1.11.4+**、已创建的 AWS S3 通用桶和 IAM 访问密钥。选择 **AWS S3**，填写区域（例如 `us-east-1`）、Bucket 和 **Access key ID**，然后在 Obsidian 秘密存储中选择或新建 **Secret access key**。默认存储目录为 `mark-to-go/`，无需 PicList 或额外安装 Node.js。
+
+仅授予目标目录的 `s3:PutObject` 权限，例如资源范围 `arn:aws:s3:::你的桶名/mark-to-go/*`，AWS 中国分区使用 `arn:aws-cn:s3:::`。采用 SSE-KMS 加密的桶可能还需相应 KMS 权限。中国区域自动使用 `amazonaws.com.cn`，带点的桶名通过路径形式访问，避免 HTTPS 证书不匹配。
+
+生成长期有效、不带签名的链接，需要桶策略或 CloudFront 等公开图片域名允许匿名读取。如使用图片域名，请填写 **公开图片地址前缀**。插件不会修改“阻止公共访问”、桶策略或对象 ACL。上传使用 AWS SigV4 签名，将同一图片快照的原始字节通过文件流发送至官方区域 Endpoint；缓存与 PicList、OSS 隔离，对象名称采用完整内容哈希，原始笔记保持不变。
+
+此选项支持 AWS S3 标准 Endpoint 和长期 IAM 访问密钥，暂不支持自定义 S3 兼容 Endpoint、目录桶、STS Session Token 或临时签名链接。**检查本地配置** 不联网，也不验证 IAM 或图片公开读取权限。
+
+### PicList
 
 **PicList 是图片上传工具，不是图床服务。** 你需要先准备自己的图床，例如对象存储，然后在 PicList 中配置。
 
@@ -67,7 +95,7 @@ CLI 默认的 `~/.piclist/config.json` 是另一个文件，**请使用刚才在
 
 ## 隐私说明
 
-仅在你主动导出时，通过本机 PicList CLI 将笔记引用的本地图片上传到所配置的图床。Markdown 正文不上传到图床，不收集遥测。MarkToGo 免费，所选图床可能需要账号或产生费用。
+仅在你主动导出时，通过本机 PicList CLI 将笔记引用的本地图片上传到所配置的图床，或直接上传到所选阿里云 OSS、AWS S3 桶。请求包含访问密钥 ID 和本机密钥计算出的签名，不发送 Secret 本身。Markdown 正文不上传到图床，不收集遥测。MarkToGo 免费，所选图床可能需要账号或产生费用。
 
 为完成上传和按需保存，插件会访问 Vault 外的 Node.js / PicList、PicList 配置及已安装插件、临时文件，以及 Downloads 或自定义导出目录。使用临时副本保护原图片和配置，详情见[进阶说明](docs/advanced.zh-CN.md)。
 

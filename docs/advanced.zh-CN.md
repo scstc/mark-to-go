@@ -6,11 +6,11 @@
 
 [GitHub：scstc/mark-to-go](https://github.com/scstc/mark-to-go)
 
-Export portable Markdown from Obsidian with images hosted through your local PicList CLI. Right-click a note → **MarkToGo**. The export is copied to the clipboard; saving to Downloads is optional. Original notes and attachments stay unchanged. Desktop only, with English and Simplified Chinese interfaces. Referenced local images are sent to your configured image host only when you export; note text is not uploaded and no telemetry is collected.
+Export portable Markdown from Obsidian with images hosted through PicList, Alibaba Cloud OSS or AWS S3. Right-click a note → **MarkToGo**. The export is copied to the clipboard; saving to Downloads is optional. Original notes and attachments stay unchanged. Desktop only, with English and Simplified Chinese interfaces. Referenced local images are sent to your configured image host only when you export; note text is not uploaded and no telemetry is collected.
 
-为 Obsidian 笔记生成可直接分享的 Markdown：右键选择 **MarkToGo**，通过本机 PicList CLI 上传图片和 SVG，替换分享版中的资源地址，并复制全文到剪贴板。需要本地文件时，再从结果弹窗点击保存。
+为 Obsidian 笔记生成可直接分享的 Markdown：右键选择 **MarkToGo**，通过本机 PicList CLI、阿里云 OSS 或 AWS S3 上传图片和 SVG，替换分享版中的资源地址，并复制全文到剪贴板。需要本地文件时，再从结果弹窗点击保存。OSS、S3 配置与最小权限说明见[快速上手](../README.zh-CN.md#选择上传方式)。
 
-当前版本 `26.4.4`。真实图床分享流程已在 Windows / Obsidian 1.14.4 / PicList-Core 3.0.2 环境下完成实际使用验证。
+当前版本 `26.4.5`，新增阿里云 OSS 与 AWS S3 直连。真实图床分享流程已在 Windows / Obsidian / PicList-Core 3.0.2 环境下完成实际使用验证，OSS 已通过真实桶上传及缓存复用验证；S3 已通过签名向量和本地传输测试，尚未使用真实 AWS 桶验证。
 
 ## 版本命名
 
@@ -22,9 +22,9 @@ Export portable Markdown from Obsidian with images hosted through your local Pic
 
 ## 使用
 
-1. 安装 Node.js 和 PicList-Core CLI：`npm install -g piclist`。它提供的命令名称是 `picgo`，请勿混用原版 PicGo CLI。
-2. 在桌面 PicList 中选好默认图床，先确认该图床可以上传。
-3. 安装本插件，在 **设置 → 第三方插件** 中启用 **MarkToGo**。
+1. 安装本插件，在 **设置 → 第三方插件** 中启用 **MarkToGo**。
+2. 推荐在插件设置中直连阿里云 OSS 或 AWS S3，填写桶信息并通过秘密存储配置密钥；需要 Obsidian 1.11.4+，无需额外安装 PicList 或 Node.js。
+3. 也可沿用 PicList：先配置桌面 PicList 的默认图床，再安装 Node.js 和 PicList-Core CLI（`npm install -g piclist`）。该包提供的命令是 `picgo`，请勿混用原版 PicGo CLI。
 4. 在文件列表中右键目标 Markdown 笔记，选择带 **MTG** 图标的 **MarkToGo**。中英文界面使用相同菜单名称，命令面板也提供对应的当前笔记操作。
 5. 图片处理完成后，分享版 Markdown 全文自动复制到剪贴板，默认不创建本地导出文件。
 6. Windows 上可点击 **Copy file / 复制文件**，再到支持文件粘贴的应用中粘贴 `.md` 附件；**Copy text / 复制文本** 用于重新复制正文。需要保留本地导出文件时，点击 **Save to Downloads / 保存到 Downloads**，保存为 `<原文件名>.shared.md`。若设置了其他导出目录，保存按钮为 **Save Markdown / 保存 Markdown**。
@@ -41,7 +41,7 @@ Export portable Markdown from Obsidian with images hosted through your local Pic
 
 ## 多电脑共享上传缓存
 
-上传映射统一保存在 Vault 根目录独立的 `MarkToGo/` 文件夹内，文件为 `MarkToGo/upload-cache.json`。无需安装独立数据库，也不依赖用户的附件目录名称。启用插件时自动创建目录和文件；记录只包含格式标识、版本、哈希与资源 URL 的映射，不保存原始 PicList 配置或密钥。
+上传映射统一保存在 Vault 根目录独立的 `MarkToGo/` 文件夹内，文件为 `MarkToGo/upload-cache.json`。无需安装独立数据库，也不依赖用户的附件目录名称。启用插件时自动创建目录和文件；记录只包含格式标识、版本、哈希与资源 URL 的映射，不保存原始配置或密钥。OSS/S3 缓存按上传方式、地域、桶、目录、账号和公开地址前缀隔离，与原有 PicList 缓存兼容；同账号轮换 Secret 不影响已缓存地址。
 
 - 同一图片内容、扩展名和相同图床及处理配置可以复用，文件移动或重命名不影响匹配；图片内容变化会重新上传。
 - 缓存标识不包含本机 Node.js / CLI / 配置文件路径，也排除已知界面设置和命名配置的设备 ID；不同电脑使用等效配置即可匹配。图床、凭证、图片处理或插件配置不同会产生不同标识。
@@ -61,6 +61,9 @@ Export portable Markdown from Obsidian with images hosted through your local Pic
 | 设置 | 默认行为 |
 | --- | --- |
 | 语言 / Language | 默认跟随 Obsidian 界面语言；可选简体中文或 English，修改后立即影响设置、右键菜单、进度及后续弹窗 |
+| 上传方式 | 新安装默认 PicList；升级保留已选方式，PicList、OSS、AWS S3 各自保留配置 |
+| OSS 配置 | 仅选择 OSS 时显示：地域、Bucket、AccessKey ID、秘密存储引用、目录（默认 `mark-to-go/`）和可选公开 HTTPS 地址前缀；要求 Obsidian 1.11.4+ |
+| S3 配置 | 仅选择 AWS S3 时显示：区域、Bucket、Access key ID、秘密存储引用、目录和可选公开地址（例如 CloudFront）；要求 Obsidian 1.11.4+，支持 AWS 标准及中国区域 Endpoint |
 | PicList CLI 入口 | 自动查找 `piclist/bin/picgo`；也可指定其完整路径，或 npm 生成的 `picgo.cmd` / `picgo.ps1` |
 | Node.js 路径 | 自动查找外部 `node`；找不到时指定 `node.exe` 的完整路径 |
 | PicList 配置文件 | Windows：`%APPDATA%\piclist\data.json`；支持指定其他桌面配置文件 |
@@ -69,7 +72,7 @@ Export portable Markdown from Obsidian with images hosted through your local Pic
 
 路径支持空格、中文、`~` 和 `%环境变量%`。Obsidian 从桌面启动时的 PATH 可能与终端不同；自动查找失败时填写完整路径。
 
-**检查本地配置** 只读取 CLI 入口、固定的 `node --version` 输出、配置 JSON 和默认图床标识、导出目录信息及 Windows PowerShell 是否存在。不运行 PicList 或其插件，不写测试文件、不上传图片、不读写剪贴板；不验证图床凭证、网络连接、执行策略、剪贴板可用性或硬链接能力。Obsidian 1.13+ 可在全局设置搜索中查找插件设置，旧版保留普通设置页。无效超时值会显示提示，失焦恢复有效值。
+**检查本地配置** 按所选方式检查：OSS/S3 验证字段和本机密钥是否可用，不启动 PicList；PicList 读取 CLI 入口、固定的 `node --version` 输出、配置 JSON 和默认图床标识。共同检查导出目录信息及 Windows PowerShell 是否存在。不运行 PicList 或其插件，不写测试文件、不上传图片、不读写剪贴板；不验证云端权限、网络连接、执行策略、剪贴板可用性或硬链接能力。Obsidian 1.13+ 可在全局设置搜索中查找插件设置，旧版保留普通设置页。无效超时值会显示提示，失焦恢复有效值。
 
 桌面 PicList 配置的默认位置：
 
@@ -92,7 +95,7 @@ Export portable Markdown from Obsidian with images hosted through your local Pic
 | 图片语法 | 标准 Markdown 图片、引用式图片、Obsidian `![[图片.png]]`，以及 `\|300` 等显示参数 |
 | 路径 | 通过 Obsidian 链接解析定位资源，支持相对路径、中文、空格及 URL 编码 |
 | 去重 | 按资源内容与图床及处理配置复用上传；同名但内容不同的资源分别处理 |
-| 云端地址 | 使用 CLI 明确的成功结果，只接受 HTTP(S)，拒绝 localhost、本机回环和携带账号密码的 URL |
+| 云端地址 | 使用所选上传方式确认成功的地址，只接受 HTTP(S)，拒绝 localhost、本机回环和携带账号密码的 URL |
 | 已有网络图片 | 保留 HTTP(S)、协议相对 URL、`data:` 引用，不重新上传 |
 | 其他内容 | 保留正文、表格、frontmatter、代码块、行内代码和普通链接 |
 | 导出文件 | 默认不落盘；点击保存后写入 UTF-8，先写完整临时文件再通过独占硬链接发布，要求目标文件系统支持硬链接（Windows NTFS 已验证） |
@@ -124,8 +127,8 @@ Obsidian 行内、多行及未闭合的 `%%` 注释内图片不会上传，但�
 - 上传失败、超时或返回无效 URL 时中止，不生成含未处理图片的“成功版”。部分资源已上传时会说明完成数量；不删除云端已上传文件。
 - 导出失败时保留原文，并提示检查 Downloads 权限或更改导出目录。
 - 剪贴板失败时保留结果窗口中的分享内容，可重试复制或按需保存文件。
-- 同一笔记分享期间阻止重复执行；插件卸载时取消正在运行的 CLI 进程。
-- 仅在手动执行分享时调用本机 CLI，将该笔记实际引用的本地图片发送到 PicList 配置的服务。Markdown 正文不交给图床；不收集遥测。
+- 同一笔记分享期间阻止重复执行；插件卸载时取消正在运行的 CLI 进程或直连请求。
+- 仅在手动执行分享时，将笔记实际引用的本地图片通过 PicList CLI 上传到所配置的图床，或直传至所选 OSS/S3 桶。Markdown 正文不交给图床；不收集遥测。
 - CLI 接收图片的临时副本，保护原附件免受图片处理或删除钩子影响；结束后清理临时配置和图片。第三方 PicList 插件仍按用户已有配置运行。
 - 不在插件日志中输出密钥、完整配置或 Markdown 全文。PicList 自身的日志及剪贴板副作用由其实现决定；分享成功时插件最后复制 Markdown 全文。
 
@@ -171,9 +174,9 @@ npm run lint
 
 `npm test` 是不依赖 PicList 的自动测试；`npm run test:piclist` 要求本机已安装 `piclist` CLI，只使用临时本地存储和合成图床插件，不访问真实云端服务。
 
-本地安装：将构建后的 `main.js` 和 `manifest.json` 复制到 `<Vault>/.obsidian/plugins/mark-to-go/`，在 Obsidian 中启用插件。开发时只重载本插件即可，无需重启 Obsidian。
+本地安装：将构建后的 `main.js`、`manifest.json` 和 `styles.css` 复制到 `<Vault>/.obsidian/plugins/mark-to-go/`，在 Obsidian 中启用插件。开发时只重载本插件即可，无需重启 Obsidian。
 
-社区安装：在 **设置 → 第三方插件 → 浏览** 中搜索 **MarkToGo**，安装并启用。手动安装也可从 [GitHub Releases](https://github.com/scstc/mark-to-go/releases) 下载 `main.js` 和 `manifest.json`，放入同一插件目录并启用。
+社区安装：在 **设置 → 第三方插件 → 浏览** 中搜索 **MarkToGo**，安装并启用。手动安装也可从 [GitHub Releases](https://github.com/scstc/mark-to-go/releases) 下载 `main.js`、`manifest.json` 和 `styles.css`，放入同一插件目录并启用。
 
 自动发版：同步四个版本文件后，推送与版本完全一致的标签，例如 `git tag 26.4.1` 和 `git push origin 26.4.1`。GitHub Actions 会校验标签、运行测试和 lint、构建，再发布公开 release，并附上 Obsidian 安装所需的独立资源文件。构建和测试失败时不会发布。
 

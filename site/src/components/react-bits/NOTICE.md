@@ -1,7 +1,7 @@
 # React Bits components
 
-TechText, CrystalizedBall, LightRays, AnimatedContent, Magnet, ClickSpark and
-GlareHover are vendored from
+TechText, CrystalizedBall, LightRays, AnimatedContent, Magnet, ClickSpark,
+GlareHover and StarBorder are vendored from
 [React Bits](https://github.com/DavidHDev/react-bits), commit
 `e12c22192ac7b4b452c5e2feb9b586d74765d696`.
 

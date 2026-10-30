@@ -1,7 +1,10 @@
-import { Component, lazy, Suspense, useEffect, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { guides, installUrl, repository, text } from './content';
 import type { Language, GuideId } from './content';
+import type { ClickSparkHandle } from './components/react-bits/ClickSpark';
+import LatestRelease from './components/LatestRelease';
+import './button-effects.css';
 
 const TechText = lazy(() => import('./components/react-bits/TechText'));
 const CrystalizedBall = lazy(() => import('./components/react-bits/CrystalizedBall'));
@@ -10,6 +13,7 @@ const AnimatedContent = lazy(() => import('./components/react-bits/AnimatedConte
 const Magnet = lazy(() => import('./components/react-bits/Magnet'));
 const ClickSpark = lazy(() => import('./components/react-bits/ClickSpark'));
 const GlareHover = lazy(() => import('./components/react-bits/GlareHover'));
+const StarBorder = lazy(() => import('./components/react-bits/StarBorder'));
 
 function initialLanguage(): Language {
   const explicit = new URLSearchParams(location.search).get('lang');
@@ -44,12 +48,13 @@ function Reveal({ children, motion, className = '' }: { children: ReactNode; mot
 }
 
 function InstallLink({ language, motion }: { language: Language; motion: boolean }) {
-  const link = <a className="button primary" href={installUrl}>{text(language, '安装到 Obsidian', 'Install in Obsidian')} <Arrow /></a>;
+  const label = <>{text(language, '安装到 Obsidian', 'Install in Obsidian')} <Arrow /></>;
+  const link = <a className="button primary install-button" href={installUrl}>{label}</a>;
   const fallback = <div className="install-magnet">{link}</div>;
-  return motion ? <Suspense fallback={fallback}><Magnet wrapperClassName="install-magnet" padding={30} magnetStrength={6} maxOffset={8} tilt={1} scale={1.015}>{link}</Magnet></Suspense> : fallback;
+  return motion ? <Suspense fallback={fallback}><Magnet wrapperClassName="install-magnet" padding={40} magnetStrength={3} maxOffset={12} tilt={2} scale={1.035}><StarBorder as="a" href={installUrl} className="button primary install-button" color="#edfff5" trailColor="#66e6b0" backgroundColor="#133e30" textColor="#effff5" borderColor="#5ba885" duration={2.8} stars={2} thickness={2} radius={8} trailLength={0.4} glow={0.9} hover="brighten" sparkle={false} clickPulse>{label}</StarBorder></Magnet></Suspense> : fallback;
 }
 
-function Demo({ language, motion }: { language: Language; motion: boolean }) {
+function Demo({ language }: { language: Language }) {
   const t = (zh: string, en: string) => text(language, zh, en);
   const [provider, setProvider] = useState('oss');
   const [shared, setShared] = useState(true);
@@ -63,19 +68,18 @@ function Demo({ language, motion }: { language: Language; motion: boolean }) {
     try { await navigator.clipboard.writeText(markdown); setCopied('ok'); }
     catch { setCopied('failed'); }
   };
-  const workspace = <div className="demo-workspace" data-ui>
+  return <div className="demo-workspace" data-ui>
     <div className="demo-toolbar"><span className="demo-note-name">{t('森林漫步.md', 'Forest walk.md')}</span><div className="segmented" aria-label={t('演示视图', 'Demo view')}>
       <button aria-pressed={!shared} onClick={() => setShared(false)}>{t('原笔记', 'Original')}</button><button aria-pressed={shared} onClick={() => setShared(true)}>{t('分享版', 'Shared')}</button>
     </div></div>
     <div className="demo-body"><article className="demo-render"><h3>{title}</h3><p>{t('把这一刻，留在笔记里。', 'A small moment, kept in a note.')}</p>
-      <img src={`${import.meta.env.BASE_URL}forest.svg`} alt={t('演示笔记中的森林插画', 'Forest illustration in the demo note')} width="600" height="360" />
+      <img src={`${import.meta.env.BASE_URL}forest.jpg`} alt={t('阳光穿过薄雾森林的实景照片', 'Sunlight filtering through a misty forest')} width="1200" height="675" loading="lazy" decoding="async" />
       <span className="demo-image-status">{shared ? t('图片已随笔记分享', 'Image included in your shared note') : t('图片保存在本地附件中', 'Image lives in your local attachments')}</span>
     </article><div className="demo-source"><div className="demo-source-heading"><span>Markdown</span><button className="text-button" onClick={copy}>{t('复制示例', 'Copy example')} <Arrow /></button></div><pre><code>{markdown}</code></pre>
       <p className="copy-feedback" role="status">{copied === 'ok' ? t('示例已复制，没有上传任何内容。', 'Example copied. Nothing was uploaded.') : copied === 'failed' ? t('浏览器未允许复制，请选中代码手动复制。', 'Your browser blocked copying. Select the code to copy it manually.') : t('这是本地交互演示，不会连接你的图床。', 'A local demo. It never connects to your storage.')}</p>
       <div className="demo-provider-picker"><span>{t('切换上传方式', 'Try another uploader')}</span><div className="segmented" aria-label={t('演示图床', 'Demo image host')}>{[['oss', 'OSS'], ['s3', 'S3'], ['piclist', 'PicList']].map(([value, label]) => <button key={value} aria-pressed={provider === value} onClick={() => setProvider(value)}>{label}</button>)}</div></div>
     </div></div>
   </div>;
-  return motion ? <Suspense fallback={workspace}><ClickSpark className="demo-spark" style={{ height: 'auto' }} sparkColor={['#399d76', '#82e3c0', '#eff7f2']} sparkSize={9} sparkRadius={28} sparkCount={7} duration={450} glow={0.08}>{workspace}</ClickSpark></Suspense> : workspace;
 }
 
 function Home({ language, motion }: { language: Language; motion: boolean }) {
@@ -88,7 +92,8 @@ function Home({ language, motion }: { language: Language; motion: boolean }) {
       <div className="hero-copy"><h1 id="hero-title" aria-label="MarkToGo"><span className={motion ? 'sr-only' : ''}>MarkToGo</span>{motion && <div className="hero-tech" aria-hidden="true"><Suspense fallback={<span className="tech-fallback">MarkToGo</span>}><TechText text="MarkToGo" fontFamily="Hanken Grotesk" fontSize={145} align="left" fontWeight={700} intro="assemble" introDuration={0.95} color="#eff7f2" accentColor="#82e3c0" labels={false} guides={false} sweep={false} specks={6} draggable={false} /></Suspense></div>}</h1>
         <p className="hero-statement">{t('让笔记自由出发', 'Your notes. Ready to go.')}</p>
         <p className="hero-description">{t('把 Obsidian 笔记变成可分享的 Markdown。图片一起走，原文留在原处。', 'Share your Obsidian notes as portable Markdown. Images go with them. Originals stay with you.')}</p>
-        <div className="hero-actions"><InstallLink language={language} motion={motion} /><a className="plain-link" href="#guide-install">{t('阅读使用手册', 'Read the guide')}</a></div>
+        <div className="hero-actions"><InstallLink language={language} motion={motion} /><a className="button secondary" href="#guide-install">{t('阅读使用手册', 'Read the guide')} <Arrow /></a></div>
+        <LatestRelease language={language} />
         <p className="hero-footnote">{t('免费开源 · 适用于 Obsidian 桌面版', 'Free and open source · Obsidian desktop')}</p>
       </div>
       <div className="hero-art" aria-label={t('笔记与图片一起传递的动态插画', 'Animated illustration of notes and images travelling together')}>
@@ -102,7 +107,7 @@ function Home({ language, motion }: { language: Language; motion: boolean }) {
       </div>
     </section>
 
-    <section id="demo" className="demo-section section-shell"><Reveal motion={motion} className="section-heading"><h2>{t('试着分享一篇', 'See a note travel')}</h2><p>{t('在原笔记和分享版之间切换，看看图片地址如何改变。', 'Switch between the original and shared note. Watch the image reference change.')}</p></Reveal><Demo language={language} motion={motion} /></section>
+    <section id="demo" className="demo-section section-shell"><Reveal motion={motion} className="section-heading"><h2>{t('试着分享一篇', 'See a note travel')}</h2><p>{t('在原笔记和分享版之间切换，看看图片地址如何改变。', 'Switch between the original and shared note. Watch the image reference change.')}</p></Reveal><Demo language={language} /></section>
 
     <section className="setup-section section-shell"><Reveal motion={motion} className="setup-intro"><h2>{t('连接你的图床', 'Your storage. Your choice.')}</h2><p>{t('推荐 OSS 或 AWS S3 直连，无需额外安装 PicList 或 Node.js；目前可在开发版体验。PicList 作为备选，已有配置升级后继续沿用。', 'We recommend direct OSS or AWS S3 uploads, with no separate PicList or Node.js installation. Available in the development build. PicList is an alternative, and existing settings are preserved on upgrade.')}</p><a className="plain-link" href="#guide-install">{t('从安装开始', 'Start with installation')} <Arrow /></a></Reveal>
       <div className="provider-list">{[
@@ -111,7 +116,7 @@ function Home({ language, motion }: { language: Language; motion: boolean }) {
         ['piclist', 'PicList', t('沿用熟悉的图床与插件', 'Keep your hosts and PicList plugins'), t('备选方式 · 稳定版已支持', 'Alternative · Available in the stable release')],
       ].map(([id, name, detail, availability]) => {
         const link = <a href={`#guide-${id}`} className="provider-link"><div><h3>{name}</h3><p>{detail}</p><span>{availability}</span></div><Arrow /></a>;
-        return <div key={id} className="provider-entry">{motion ? <Suspense fallback={link}><GlareHover width="100%" borderRadius="0px" style={{ display: 'block', border: 0 }} glareColor="#a3efcb" glareOpacity={0.18} glareSize={38} transitionDuration={650} rimGlint={false}>{link}</GlareHover></Suspense> : link}</div>;
+        return <div key={id} className="provider-entry">{motion ? <Suspense fallback={link}><GlareHover width="100%" borderRadius="0px" style={{ display: 'block', border: 0 }} glareColor="#a3efcb" glareOpacity={0.35} glareSize={32} transitionDuration={700} rimGlint={false}>{link}</GlareHover></Suspense> : link}</div>;
       })}</div>
     </section>
 
@@ -142,8 +147,19 @@ export default function App() {
   const [paused, setPaused] = useState(false);
   const reduced = useReducedMotion();
   const motion = !reduced && !paused;
+  const appRef = useRef<HTMLDivElement>(null);
+  const sparkRef = useRef<ClickSparkHandle>(null);
   const t = (zh: string, en: string) => text(language, zh, en);
   const isGuide = route.startsWith('guide-');
+  const spark = (target: EventTarget, x?: number, y?: number) => {
+    if (!motion || isGuide || !(target instanceof Element)) return;
+    const control = target.closest('a, button, summary');
+    const root = appRef.current;
+    if (!control || !root || control.matches(':disabled, .skip-link')) return;
+    const box = root.getBoundingClientRect();
+    const button = control.getBoundingClientRect();
+    sparkRef.current?.spark((x ?? button.left + button.width / 2) - box.left, (y ?? button.top + button.height / 2) - box.top);
+  };
   useEffect(() => {
     const change = () => setRoute(location.hash.slice(1) || 'home');
     window.addEventListener('hashchange', change);
@@ -160,8 +176,10 @@ export default function App() {
     if (route === 'demo') document.getElementById('demo')?.scrollIntoView({ behavior: motion ? 'smooth' : 'instant' });
     else window.scrollTo({ top: 0, behavior: 'instant' });
   }, [route]);
-  return <><a className="skip-link" href="#main" onClick={event => { event.preventDefault(); document.getElementById('main')?.focus(); document.getElementById('main')?.scrollIntoView(); }}>{t('跳转到正文', 'Skip to content')}</a><header className="site-header"><a href="#home" className="wordmark"><img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width="30" height="30" />MarkToGo</a><nav className="site-navigation" aria-label={t('主导航', 'Main navigation')}><a href="#demo">{t('体验', 'Demo')}</a><a href="#guide-install" aria-current={isGuide ? 'page' : undefined}>{t('使用手册', 'Guide')}</a><a href={repository} target="_blank" rel="noopener noreferrer">GitHub <Arrow external /></a></nav><div className="header-tools"><button className="motion-toggle" aria-pressed={!motion} onClick={() => setPaused(value => !value)} disabled={reduced} title={t('切换动态效果', 'Toggle animation')}>{motion ? t('暂停动效', 'Pause motion') : t('静态模式', 'Motion off')}</button><div className="language-toggle" aria-label={t('网站语言', 'Website language')}><button aria-pressed={language === 'zh'} onClick={() => setLanguage('zh')}>中</button><button aria-pressed={language === 'en'} onClick={() => setLanguage('en')}>EN</button></div></div></header>
+  return <div ref={appRef} className="site-app" data-page={isGuide ? 'guide' : 'home'} data-motion={motion} onPointerDownCapture={event => { if (event.isPrimary && event.button === 0) spark(event.target, event.clientX, event.clientY); }} onClickCapture={event => { if (event.detail === 0) spark(event.target); }}>
+    {motion && !isGuide && <Suspense fallback={null}><ClickSpark ref={sparkRef} className="button-sparks" style={{ position: 'absolute', inset: 0, height: 'auto', pointerEvents: 'none', zIndex: 20, overflow: 'hidden' }} sparkColor={['#63d3a2', '#b8ffdc', '#ffffff']} sparkSize={12} sparkRadius={46} sparkCount={10} duration={600} sparkWidth={2.5} glow={0.3} ring /></Suspense>}
+    <a className="skip-link" href="#main" onClick={event => { event.preventDefault(); document.getElementById('main')?.focus(); document.getElementById('main')?.scrollIntoView(); }}>{t('跳转到正文', 'Skip to content')}</a><header className="site-header"><a href="#home" className="wordmark"><img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width="30" height="30" />MarkToGo</a><nav className="site-navigation" aria-label={t('主导航', 'Main navigation')}><a href="#demo">{t('体验', 'Demo')}</a><a href="#guide-install" aria-current={isGuide ? 'page' : undefined}>{t('使用手册', 'Guide')}</a><a href={repository} target="_blank" rel="noopener noreferrer">GitHub <Arrow external /></a></nav><div className="header-tools"><button className="motion-toggle" aria-pressed={!motion} onClick={() => setPaused(value => !value)} disabled={reduced} title={t('切换动态效果', 'Toggle animation')}>{motion ? t('暂停动效', 'Pause motion') : t('静态模式', 'Motion off')}</button><div className="language-toggle" aria-label={t('网站语言', 'Website language')}><button aria-pressed={language === 'zh'} onClick={() => setLanguage('zh')}>中</button><button aria-pressed={language === 'en'} onClick={() => setLanguage('en')}>EN</button></div></div></header>
     <main id="main" tabIndex={-1}>{isGuide ? <GuidePage language={language} id={route.slice(6) as GuideId} /> : <Home language={language} motion={motion} />}</main>
     <footer className="site-footer section-shell"><div><a href="#home" className="footer-brand">MarkToGo</a><p>{t('让笔记走得更远', 'Good notes travel.')}</p></div><div className="footer-links"><a href="#guide-privacy">{t('隐私与权限', 'Privacy')}</a><a href={repository + '/releases'} target="_blank" rel="noopener noreferrer">{t('版本记录', 'Releases')}</a><a href="https://reactbits.dev/" target="_blank" rel="noopener noreferrer">{t('动效来自 React Bits', 'Motion by React Bits')}</a><a href={`${import.meta.env.BASE_URL}react-bits-license.txt`}>{t('组件许可', 'Component license')}</a></div><span>Simple · 0-BSD</span></footer>
-  </>;
+  </div>;
 }

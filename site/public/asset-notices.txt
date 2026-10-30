@@ -6,3 +6,12 @@ Obsidian and its logo are trademarks of Obsidian. The logo identifies the applic
 with which the MarkToGo plugin works; it is not part of MarkToGo's own logo.
 
 React Bits components retain their license in react-bits-license.txt.
+
+Forest demo photograph
+Photo: Sebastian Unrau, Bad Pyrmont, Germany (2015).
+Original: https://unsplash.com/photos/sp-p7uuT0tw
+Source and license record:
+https://commons.wikimedia.org/wiki/File:Bad_Pyrmont,_Deutschland_(Unsplash_sp-p7uuT0tw).jpg
+License: CC0 1.0 Universal (originally published before 5 June 2017).
+https://creativecommons.org/publicdomain/zero/1.0/
+Cropped and resized to 1200 x 675 for the website.

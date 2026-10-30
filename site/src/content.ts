@@ -18,25 +18,13 @@ export function guides(language: Language): Guide[] {
   const t = (zh: string, en: string) => text(language, zh, en);
   return [
     { id: 'install', title: t('安装与开始', 'Install and start'),
-      intro: t('MarkToGo 是免费的 Obsidian 桌面插件。先安装插件，再配置你的图片存储服务。', 'MarkToGo is a free Obsidian desktop plugin. Install the plugin, then connect your image storage.'),
+      intro: t('推荐使用阿里云 OSS 或 AWS S3 直连，在插件里填写桶与密钥即可，无需额外安装 PicList 或 Node.js。PicList 保留为备选方式。', 'Prefer a direct Alibaba Cloud OSS or AWS S3 connection. Configure your bucket and credentials inside the plugin, with no separate PicList or Node.js installation. PicList remains an alternative.'),
       steps: [
         { title: t('从社区安装', 'Install from the community'), body: t('打开 Obsidian → 设置 → 第三方插件 → 浏览，搜索 MarkToGo，安装并启用。也可以使用下方安装链接。', 'Open Obsidian → Settings → Community plugins → Browse. Search for MarkToGo, install and enable it, or use the install link below.') },
-        { title: t('选择上传方式', 'Choose your uploader'), body: t('当前社区稳定版通过 PicList 上传。OSS 与 AWS S3 直传已在开发版实现，尚未发布；稳定版更新后会出现在设置中。', 'The current community release uploads through PicList. Direct OSS and AWS S3 uploads are implemented in the development build and will appear in settings after the next release.') },
+        { title: t('优先选择直连', 'Prefer a direct connection'), body: t('支持直连的版本中，优先选择阿里云 OSS 或 AWS S3；已有 PicList 配置或需要其他图床时，再选择 PicList。升级会保留原有上传方式和配置，不会自动切换。', 'In a build with direct uploads, choose Alibaba Cloud OSS or AWS S3 first. Use PicList if you already have a setup or need another host. Upgrades preserve your selected method and settings; they do not switch providers automatically.') },
         { title: t('导出第一篇笔记', 'Export your first note'), body: t('在 Markdown 笔记上右键选择 MarkToGo。插件上传引用的本地图片，复制可分享的 Markdown；原文与附件保持不变。', 'Right-click a Markdown note and select MarkToGo. The plugin uploads referenced local images and copies shareable Markdown. Your note and attachments stay unchanged.') },
-      ], links: [{ label: t('在 Obsidian 中安装', 'Install in Obsidian'), href: installUrl }, { label: t('下载稳定版', 'Download the stable release'), href: repository + '/releases/latest' }],
-      note: t('仅支持桌面版，Windows 已验证。复制文件目前仅支持 Windows；macOS 与 Linux 尚未实测。', 'Desktop only. Tested on Windows. Copy file currently requires Windows; macOS and Linux have not been tested.') },
-    { id: 'piclist', title: t('配置 PicList', 'Set up PicList'),
-      intro: t('PicList 负责把图片送到你配置的图床。已经有 PicList 配置？升级后会继续沿用。', 'PicList sends images to your configured host. Existing PicList settings are preserved when upgrading.'),
-      steps: [
-        { title: t('先配置图床', 'Connect your image host'), body: t('安装 PicList 桌面版，填好图床配置并选为默认图床。先在 PicList 中上传一张图片，确认链接可公开访问。', 'Install PicList desktop, configure your image host and select it as default. Upload a test image in PicList and confirm its URL is publicly accessible.') },
-        { title: t('安装命令行工具', 'Install the command-line tool'), body: t('安装 Node.js LTS，在终端执行 npm install -g piclist。安装包叫 piclist，命令叫 picgo；桌面程序不能代替 CLI。', 'Install Node.js LTS and run npm install -g piclist in a terminal. The package is piclist, but the command is picgo. The desktop executable cannot replace the CLI.') },
-        { title: t('检查本地配置', 'Check local configuration'), body: t('在 MarkToGo 设置中选择 PicList，先将路径留空，让插件自动查找。遇到问题时点击“检查本地配置”，再补全需要的路径。', 'Select PicList in MarkToGo settings and initially leave paths blank for automatic discovery. Use Check local configuration to find out which paths need attention.') },
-      ], fields: [
-        { name: t('PicList CLI 入口', 'PicList CLI entry'), value: 'piclist/bin/picgo', description: t('运行 npm root -g，在结果后追加此路径。', 'Append this path to the result of npm root -g.') },
-        { name: t('Node.js 路径', 'Node.js path'), value: 'node.exe', description: t('自动查找失败时填写完整可执行文件路径。', 'Enter the full executable path if discovery fails.') },
-        { name: t('配置文件', 'Configuration file'), value: '%APPDATA%\\piclist\\data.json', description: t('Windows 桌面配置；与 ~/.piclist/config.json 不同。', 'Windows desktop configuration; different from ~/.piclist/config.json.') },
-      ], links: [{ label: t('PicList 官网', 'PicList website'), href: 'https://piclist.cn/' }, { label: 'Node.js LTS', href: 'https://nodejs.org/' }],
-      note: t('检查本地配置不会上传图片，不会运行 PicList 插件，也不会验证图床凭证或网络。', 'Local checks do not upload images, run PicList plugins or test host credentials and connectivity.') },
+      ], links: [{ label: t('在 Obsidian 中安装', 'Install in Obsidian'), href: installUrl }, { label: t('下载稳定版', 'Download the stable release'), href: repository + '/releases/latest' }, { label: t('OSS 直连（推荐）', 'OSS direct (recommended)'), href: '#guide-oss' }, { label: t('S3 直连（推荐）', 'S3 direct (recommended)'), href: '#guide-s3' }, { label: t('PicList（备选）', 'PicList (alternative)'), href: '#guide-piclist' }],
+      note: t('OSS/S3 直连仍为开发预览，当前社区稳定版 26.4.4 使用 PicList。仅支持桌面版，Windows 已验证；复制文件仅支持 Windows，macOS 与 Linux 尚未实测。', 'Direct OSS/S3 is still a development preview; the current community release, 26.4.4, uses PicList. Desktop only. Tested on Windows; Copy file requires Windows. macOS and Linux have not been tested.') },
     { id: 'oss', title: t('阿里云 OSS 直传', 'Direct Alibaba Cloud OSS'),
       intro: t('开发版功能。直接连接 OSS，无需 PicList 或额外安装 Node.js。需要 Obsidian 1.11.4 及以上。', 'Development feature. Connect directly to OSS without PicList or a separate Node.js installation. Requires Obsidian 1.11.4+.'),
       steps: [
@@ -64,6 +52,18 @@ export function guides(language: Language): Guide[] {
         { name: t('存储目录', 'Folder'), value: 'mark-to-go/', description: t('与 IAM 授权资源范围保持一致。', 'Match the prefix allowed by your IAM policy.') },
       ], links: [{ label: t('S3 控制台', 'S3 console'), href: 'https://console.aws.amazon.com/s3/home' }, { label: t('IAM 用户', 'IAM users'), href: 'https://console.aws.amazon.com/iam/home#/users' }, { label: t('AWS 中国控制台', 'AWS China console'), href: 'https://console.amazonaws.cn/s3/home' }],
       note: t('暂不支持 R2、MinIO 等自定义 Endpoint、STS Session Token 或目录桶。SSE-KMS 桶还可能需要 KMS 权限。S3 实桶验证需使用你自己的凭证。', 'Custom endpoints such as R2 or MinIO, STS session tokens and directory buckets are not supported. SSE-KMS buckets may need KMS permissions. Verify real uploads using your own credentials.') },
+    { id: 'piclist', title: t('PicList（备选）', 'PicList (alternative)'),
+      intro: t('已有 PicList 配置或需要其他图床时，可选择这条备选路线，继续使用熟悉的图床与插件。升级后保留已有配置。', 'Use this alternative if you already have PicList set up or need another host. Keep your existing hosts and PicList plugins; upgrades preserve your settings.'),
+      steps: [
+        { title: t('先配置图床', 'Connect your image host'), body: t('安装 PicList 桌面版，填好图床配置并选为默认图床。先在 PicList 中上传一张图片，确认链接可公开访问。', 'Install PicList desktop, configure your image host and select it as default. Upload a test image in PicList and confirm its URL is publicly accessible.') },
+        { title: t('安装命令行工具', 'Install the command-line tool'), body: t('安装 Node.js LTS，在终端执行 npm install -g piclist。安装包叫 piclist，命令叫 picgo；桌面程序不能代替 CLI。', 'Install Node.js LTS and run npm install -g piclist in a terminal. The package is piclist, but the command is picgo. The desktop executable cannot replace the CLI.') },
+        { title: t('检查本地配置', 'Check local configuration'), body: t('在 MarkToGo 设置中选择 PicList，先将路径留空，让插件自动查找。遇到问题时点击“检查本地配置”，再补全需要的路径。', 'Select PicList in MarkToGo settings and initially leave paths blank for automatic discovery. Use Check local configuration to find out which paths need attention.') },
+      ], fields: [
+        { name: t('PicList CLI 入口', 'PicList CLI entry'), value: 'piclist/bin/picgo', description: t('运行 npm root -g，在结果后追加此路径。', 'Append this path to the result of npm root -g.') },
+        { name: t('Node.js 路径', 'Node.js path'), value: 'node.exe', description: t('自动查找失败时填写完整可执行文件路径。', 'Enter the full executable path if discovery fails.') },
+        { name: t('配置文件', 'Configuration file'), value: '%APPDATA%\\piclist\\data.json', description: t('Windows 桌面配置；与 ~/.piclist/config.json 不同。', 'Windows desktop configuration; different from ~/.piclist/config.json.') },
+      ], links: [{ label: t('PicList 官网', 'PicList website'), href: 'https://piclist.cn/' }, { label: 'Node.js LTS', href: 'https://nodejs.org/' }],
+      note: t('检查本地配置不会上传图片，不会运行 PicList 插件，也不会验证图床凭证或网络。', 'Local checks do not upload images, run PicList plugins or test host credentials and connectivity.') },
     { id: 'sharing', title: t('分享与缓存', 'Sharing and caching'),
       intro: t('一次导出，得到可直接粘贴的 Markdown。需要附件时，再选择复制文件。', 'Export once to get Markdown ready to paste. Choose Copy file when you need an attachment.'),
       steps: [

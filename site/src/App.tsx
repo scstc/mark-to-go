@@ -106,7 +106,7 @@ function GuidePage({ language, id }: { language: Language; id: string }) {
   const t = (zh: string, en: string) => text(language, zh, en);
   const all = guides(language);
   const guide = all.find(item => item.id === id) ?? all[0];
-  return <div className="guide-layout section-shell"><aside className="guide-nav"><a className="back-home" href="#home">{t('返回首页', 'Back to home')}</a><nav aria-label={t('手册目录', 'Guide contents')}>{all.map(item => <a key={item.id} href={`#guide-${item.id}`} aria-current={guide.id === item.id ? 'page' : undefined}>{item.title}</a>)}</nav></aside>
+  return <div className="guide-layout"><aside className="guide-nav"><a className="back-home" href="#home">{t('返回首页', 'Back to home')}</a><nav aria-label={t('手册目录', 'Guide contents')}>{all.map(item => <a key={item.id} href={`#guide-${item.id}`} aria-current={guide.id === item.id ? 'page' : undefined}>{item.title}</a>)}</nav></aside>
     <article className="guide-article"><h1>{guide.title}</h1><p className="guide-intro">{guide.intro}</p>
       <div className="guide-quick-links">{guide.links.map(link => <a key={link.href} href={link.href} target={link.href.startsWith('https:') ? '_blank' : undefined} rel="noopener noreferrer">{link.label}<Arrow external /></a>)}</div>
       <ol className="guide-steps">{guide.steps.map(step => <li key={step.title}><h2>{step.title}</h2><p>{step.body}</p>{guide.id === 'piclist' && guide.steps.indexOf(step) === 1 && <pre><code>npm install -g piclist</code></pre>}</li>)}</ol>

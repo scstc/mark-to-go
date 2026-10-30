@@ -5,6 +5,7 @@ import type { Language, GuideId } from './content';
 
 const TechText = lazy(() => import('./components/react-bits/TechText'));
 const CrystalizedBall = lazy(() => import('./components/react-bits/CrystalizedBall'));
+const LightRays = lazy(() => import('./components/react-bits/LightRays'));
 const AnimatedContent = lazy(() => import('./components/react-bits/AnimatedContent'));
 
 function initialLanguage(): Language {
@@ -25,10 +26,10 @@ function useReducedMotion() {
   return reduced;
 }
 
-class EffectBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+class EffectBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
-  render() { return this.state.failed ? <div className="orb-fallback" /> : this.props.children; }
+  render() { return this.state.failed ? this.props.fallback ?? <div className="orb-fallback" /> : this.props.children; }
 }
 
 function Arrow({ external = false }: { external?: boolean }) {
@@ -69,10 +70,12 @@ function Demo({ language }: { language: Language }) {
 
 function Home({ language, motion }: { language: Language; motion: boolean }) {
   const t = (zh: string, en: string) => text(language, zh, en);
+  const [pulse, setPulse] = useState(0);
   const faq = guides(language).find(guide => guide.id === 'faq')!;
   return <>
-    <section className="hero" aria-labelledby="hero-title">
-      <div className="hero-copy"><h1 id="hero-title" aria-label="MarkToGo"><span className={motion ? 'sr-only' : ''}>MarkToGo</span>{motion && <div className="hero-tech" aria-hidden="true"><Suspense fallback={<span className="tech-fallback">MarkToGo</span>}><TechText text="MarkToGo" fontFamily="Hanken Grotesk" fontSize={145} align="left" fontWeight={700} intro="assemble" introDuration={1.4} color="#eff7f2" accentColor="#82e3c0" labels={false} guides={false} sweep={false} specks={6} draggable={false} /></Suspense></div>}</h1>
+    <section className="hero" aria-labelledby="hero-title" data-motion={motion}>
+      {motion && <div className="hero-atmosphere" aria-hidden="true"><EffectBoundary fallback={<span />}><Suspense fallback={null}><LightRays raysOrigin="top-center" raysColor="#82e3c0" raysSpeed={0.45} lightSpread={0.8} rayLength={1.5} rayDensity={0.8} intensity={1} glow={0.4} haze={0.15} opacity={0.65} followMouse mouseInfluence={0.08} cursorShadow={false} clickPulse={false} maxDevicePixelRatio={1} /></Suspense></EffectBoundary></div>}
+      <div className="hero-copy"><h1 id="hero-title" aria-label="MarkToGo"><span className={motion ? 'sr-only' : ''}>MarkToGo</span>{motion && <div className="hero-tech" aria-hidden="true"><Suspense fallback={<span className="tech-fallback">MarkToGo</span>}><TechText text="MarkToGo" fontFamily="Hanken Grotesk" fontSize={145} align="left" fontWeight={700} intro="assemble" introDuration={0.95} color="#eff7f2" accentColor="#82e3c0" labels={false} guides={false} sweep={false} specks={6} draggable={false} /></Suspense></div>}</h1>
         <p className="hero-statement">{t('让笔记自由出发', 'Your notes. Ready to go.')}</p>
         <p className="hero-description">{t('把 Obsidian 笔记变成可分享的 Markdown。图片一起走，原文留在原处。', 'Share your Obsidian notes as portable Markdown. Images go with them. Originals stay with you.')}</p>
         <div className="hero-actions"><a className="button primary" href={installUrl}>{t('安装到 Obsidian', 'Install in Obsidian')} <Arrow /></a><a className="plain-link" href="#guide-install">{t('阅读使用手册', 'Read the guide')}</a></div>
@@ -80,6 +83,10 @@ function Home({ language, motion }: { language: Language; motion: boolean }) {
       </div>
       <div className="hero-art" aria-label={t('笔记与图片一起传递的动态插画', 'Animated illustration of notes and images travelling together')}>
         <div className="orb-frame" aria-hidden="true"><EffectBoundary>{motion ? <Suspense fallback={<div className="orb-fallback" />}><CrystalizedBall color="#83e8c2" theme="dark" particleCount={4500} size={0.79} speed={0.65} strands={5} glow={0.35} haze={0.1} interactive hoverStrength={0.55} /></Suspense> : <div className="orb-fallback" />}</EffectBoundary></div>
+        {pulse > 0 && <div className="share-pulse" key={pulse} aria-hidden="true"><span /><span /></div>}
+        <button className="obsidian-center" onClick={() => setPulse(value => value + 1)} disabled={!motion} aria-label={t('播放笔记分享动效', 'Play the note-sharing animation')} title={t('点击宝石，看看笔记如何出发', 'Click the gem to send a note on its way')}>
+          <img src={`${import.meta.env.BASE_URL}obsidian-logo.svg`} alt="Obsidian" width="118" height="118" />
+        </button>
         <div className="floating-note local-note" data-ui><span className="note-file">{t('我的笔记.md', 'My note.md')}</span><span className="note-line wide" /><span className="note-line" /><div className="note-attachment"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8" cy="8" r="1.5" /><path d="m3 17 5-5 4 4 4-7 5 9" /></svg><span>![[image.png]]</span></div><span className="note-location">{t('本地笔记', 'Local note')}</span></div>
         <div className="floating-note shared-note" data-ui><span className="note-file">{t('分享版.md', 'Ready to share.md')}</span><span className="note-line wide" /><span className="note-line" /><div className="note-attachment online"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M8 8h-1a5 5 0 0 0 0 10h3m6-12h1a5 5 0 0 1 0 10h-3M8 12h8" /></svg><span>https://…/image.png</span></div><span className="note-location">{t('图片链接，随文同行', 'Images, linked and included')}</span></div>
       </div>

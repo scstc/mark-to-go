@@ -1,0 +1,8 @@
+Obsidian logo
+Source: https://obsidian.md/images/obsidian-logo-gradient.svg
+Brand guidelines: https://obsidian.md/brand
+The original SVG is included without changes to its artwork or colors.
+Obsidian and its logo are trademarks of Obsidian. The logo identifies the application
+with which the MarkToGo plugin works; it is not part of MarkToGo's own logo.
+
+React Bits components retain their license in react-bits-license.txt.

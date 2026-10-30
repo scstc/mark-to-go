@@ -12,6 +12,14 @@ export interface Release {
 // Dates, assets and highlights verified against GitHub Releases and their linked commits.
 export const savedReleases: Release[] = [
   {
+    version: '26.4.6', publishedAt: '2026-10-30T07:15:59Z', url: `${repository}/releases/tag/26.4.6`,
+    highlights: {
+      zh: ['将独立官网移至文档目录，修正社区扫描将官网代码纳入插件检查的问题。', '同步官网部署与 README 图片路径，保留公开地址、动效和高清使用动画。', '保留插件类型检查、lint 和回归测试；文件系统、子进程与剪贴板能力提示仍可能显示。'],
+      en: ['Move the independent website into the documentation directory to correct community scan scope.', 'Update deployment and README image paths while preserving public URLs, effects and HD walkthroughs.', 'Retain plugin type checks, lint and regression tests; filesystem, process and clipboard capability notices may remain.'],
+    },
+    assets: ['main.js', 'manifest.json', 'styles.css'].map(name => ({ name, url: `${repository}/releases/download/26.4.6/${name}` })),
+  },
+  {
     version: '26.4.5', publishedAt: '2026-10-30T06:19:11Z', url: `${repository}/releases/tag/26.4.5`,
     highlights: {
       zh: ['新增阿里云 OSS 与 AWS S3 直连，无需额外安装 PicList 或 Node.js。', '采用 V4/SigV4 签名与 Obsidian 秘密存储，支持 AWS 中国区域和公开图片域名。', '图片使用完整内容哈希命名，缓存按上传方式与目标桶隔离。', '升级保留原有 PicList 配置，设置新增帮助与云控制台快捷入口。'],

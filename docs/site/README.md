@@ -54,13 +54,15 @@ Direct OSS/S3 uploads are available from plugin version 26.4.5 and require Obsid
 1.11.4+. Existing upload choices and PicList configuration are preserved on upgrade.
 The website workflow only deploys the website; it never publishes a plugin release.
 
-The homepage includes an independent, non-commercial technical demonstration of
+The homepage includes a floating, non-commercial technical demonstration of
 [Emotion Ball](https://github.com/sam70361/aora-bot), pinned to commit
 `e3b6148c818da4a8e1966f2bc89cdb3cee473b73`. Its four unmodified, self-hosted
-scripts load near the demonstration; they make no AI or third-party API requests.
-The component supports bilingual controls, static expressions when motion is off,
-and pauses outside the viewport or while the document is hidden. Instances and
-event listeners are cleaned up when leaving the homepage.
+scripts load with the bottom-right ball; they make no AI or third-party API requests.
+The ball is visible in the first viewport, and opens a compact expression panel.
+The component supports bilingual controls, keyboard dismissal, static expressions
+when motion is off, and pauses while the document is hidden. Instances and event
+listeners are cleaned up when leaving the homepage. The panel stays within small
+and short viewports, with its attribution and complete licensing linked inside.
 
 Emotion Ball is covered by a custom non-commercial community license, separate
 from MarkToGo's 0-BSD license. Ball-character visual designs are only for personal

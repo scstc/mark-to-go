@@ -16,8 +16,39 @@ class TextControl {
 	onChange(callback: (value: string) => unknown) { this.change = callback; return this; }
 }
 
+class PreviewElement {
+	children: PreviewElement[] = [];
+	parent?: PreviewElement;
+	attributes = new Map<string, string>();
+	text = '';
+	onclick?: () => void;
+	constructor(readonly tag: string) {}
+	addClass(...names: string[]) { this.setAttribute('class', names.join(' ')); }
+	setAttribute(name: string, value: string) { this.attributes.set(name, value); }
+	setText(text: string) { this.text = text; }
+	remove() {
+		if (!this.parent) return;
+		this.parent.children = this.parent.children.filter(child => child !== this);
+		this.parent = undefined;
+	}
+	private createChild(tag: string, options: { cls?: string; text?: string; attr?: Record<string, string> } = {}) {
+		const element = new PreviewElement(tag);
+		if (options.cls) element.addClass(options.cls);
+		if (options.text) element.setText(options.text);
+		for (const [name, value] of Object.entries(options.attr ?? {})) element.setAttribute(name, value);
+		element.parent = this;
+		this.children.push(element);
+		return element;
+	}
+	createEl(tag: string, options?: { cls?: string; text?: string; attr?: Record<string, string> }) { return this.createChild(tag, options); }
+	createDiv(options?: { cls?: string; text?: string; attr?: Record<string, string> }) { return this.createChild('div', options); }
+	createSvg(tag: string, options?: { cls?: string; text?: string; attr?: Record<string, string> }) { return this.createChild(tag, options); }
+	descendants(): PreviewElement[] { return this.children.flatMap(child => [child, ...child.descendants()]); }
+}
+
 class Row {
-	settingEl = { addClass: (_name: string) => undefined };
+	settingEl = new PreviewElement('div');
+	controlEl = this.settingEl.createDiv();
 	static rows: Row[] = [];
 	name = '';
 	desc = '';
@@ -43,8 +74,10 @@ class Row {
 
 class Tab {
 	updates = 0;
+	hides = 0;
 	containerEl = { empty: () => { Row.rows = []; } };
 	update() { this.updates++; }
+	hide() { this.hides++; }
 }
 
 void test('search definitions and legacy rendering share real controls; invalid timeout never silently saves', async () => {
@@ -60,11 +93,13 @@ void test('search definitions and legacy rendering share real controls; invalid 
 			process, Buffer, AbortController, URL,
 		});
 		const loaded = module.exports as { MarkToGoSettingTab: new (app: object, plugin: object) => Tab & {
-			display(): void; getSettingDefinitions(): Array<{ name: string; render?: (row: Row) => void }>;
+			display(): void; getSettingDefinitions(): Array<{ name: string; render?: (row: Row) => void | (() => void) }>;
 		}; DEFAULT_SETTINGS: { timeoutSeconds: number; language: string } };
 		let saves = 0;
 		let languageChanges = 0;
+		const unloadCallbacks: Array<() => void> = [];
 		const plugin = { settings: { ...loaded.DEFAULT_SETTINGS }, t: createTranslator('en'), isSharing: false,
+			register: (cleanup: () => void) => { unloadCallbacks.push(cleanup); },
 			saveSettings: () => { saves++; return Promise.resolve(); },
 			setLanguage: () => { languageChanges++; return Promise.resolve(); },
 		};
@@ -74,6 +109,19 @@ void test('search definitions and legacy rendering share real controls; invalid 
 		assert.ok(definitions.some(d => d.name === 'Upload timeout per image' && d.render));
 		tab.display();
 		assert.deepEqual(Row.rows.map(r => r.name), Array.from(definitions, d => d.name));
+		const settingsBeforePreview = JSON.stringify(plugin.settings);
+		const preview = Row.rows.find(row => row.name === 'Assistant preview')!.controlEl.children[0]!;
+		const previewElements = preview.descendants();
+		const copied = previewElements.find(element => element.tag === 'button' && element.text === 'Copied')!;
+		const pause = previewElements.find(element => element.tag === 'button' && element.text === 'Pause animation')!;
+		assert.equal(typeof copied.onclick, 'function');
+		assert.equal(typeof pause.onclick, 'function');
+		copied.onclick!();
+		pause.onclick!();
+		assert.equal(preview.attributes.get('data-state'), 'copied');
+		assert.equal(preview.attributes.get('data-paused'), 'true');
+		assert.equal(saves, 0, 'Trying the assistant must not save or change upload settings');
+		assert.equal(JSON.stringify(plugin.settings), settingsBeforePreview);
 		const timeout = Row.rows.find(r => r.name === 'Upload timeout per image')!;
 		await timeout.text!.change!('abc');
 		assert.equal(saves, 0);
@@ -87,6 +135,27 @@ void test('search definitions and legacy rendering share real controls; invalid 
 		await Row.rows.find(r => r.name === 'Language')!.text!.change!('zh');
 		assert.equal(languageChanges, 1);
 		assert.equal(tab.updates, modern ? 1 : 0);
+		const settingsBeforeCleanup = JSON.stringify(plugin.settings);
+		tab.display();
+		assert.equal(preview.parent, undefined, 'Re-rendering must retire the previous preview');
+		const renderedPreview = Row.rows.find(row => row.name === 'Assistant preview')!.controlEl.children[0]!;
+		const searchRow = new Row();
+		const disposeSearch = tab.getSettingDefinitions().find(definition => definition.name === 'Assistant preview')!.render!(searchRow);
+		assert.equal(typeof disposeSearch, 'function');
+		if (disposeSearch) { disposeSearch(); disposeSearch(); }
+		assert.equal(searchRow.controlEl.children.length, 0, 'Search render cleanup must remove its preview');
+		tab.hide();
+		tab.hide();
+		assert.equal(renderedPreview.parent, undefined, 'Hiding settings must retire the visible preview');
+		assert.equal(tab.hides, 2);
+		tab.display();
+		const unloadingPreview = Row.rows.find(row => row.name === 'Assistant preview')!.controlEl.children[0]!;
+		assert.equal(unloadCallbacks.length, 1, 'Re-renders must not accumulate plugin unload callbacks');
+		unloadCallbacks[0]!();
+		unloadCallbacks[0]!();
+		assert.equal(unloadingPreview.parent, undefined, 'Plugin unload cleanup must be safe to repeat');
+		assert.equal(JSON.stringify(plugin.settings), settingsBeforeCleanup);
+		assert.equal(saves, 1);
 	}
 });
 
@@ -116,7 +185,8 @@ void test('upgrading keeps the selected provider and switching preserves all thr
 		assert.equal(loaded.loadSettings({ ...previous, uploadProvider: 'oss' }).uploadProvider, 'oss');
 		assert.equal(loaded.loadSettings({ ...previous, uploadProvider: 's3' }).uploadProvider, 's3');
 		for (const [key, value] of Object.entries(previous)) assert.equal(settings[key as keyof Settings], value);
-		const plugin = { settings, t: createTranslator('en'), isSharing: false, saveSettings: () => Promise.resolve() };
+		const plugin = { settings, t: createTranslator('en'), isSharing: false, saveSettings: () => Promise.resolve(),
+			register: (_cleanup: () => void) => undefined };
 		const tab = new loaded.MarkToGoSettingTab({}, plugin);
 		tab.display();
 		assert.ok(Row.rows.some(row => row.name === 'PicList CLI entry'));
@@ -158,7 +228,7 @@ void test('automatic language selection never calls the newer API on old Obsidia
 	const module = { exports: {} as unknown };
 	runInNewContext(bundle.outputFiles[0]!.text, { module, exports: module.exports,
 		require: (id: string): unknown => id === 'obsidian' ? {
-			Plugin: class {}, PluginSettingTab: Tab, Modal: class {},
+			Plugin: class {}, PluginSettingTab: Tab, Modal: class {}, Notice: class {},
 			requireApiVersion: () => modern,
 			getLanguage: () => { languageCalls++; assert.ok(modern); return 'zh'; },
 		} : id === 'electron' ? {} : require(id),

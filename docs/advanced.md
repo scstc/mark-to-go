@@ -128,7 +128,7 @@ The 26.4.5 community report contained 1,452 findings: 1,449 source-level finding
 
 ## Development
 
-Based on the [official Obsidian sample plugin](https://github.com/obsidianmd/obsidian-sample-plugin), using TypeScript, npm, and esbuild. The license is **0-BSD**; original template attribution is retained in `LICENSE`.
+Based on the [official Obsidian sample plugin](https://github.com/obsidianmd/obsidian-sample-plugin), using TypeScript, npm, and esbuild. MarkToGo's own code uses **0-BSD**; original template attribution is retained in `LICENSE`. The bundled Emotion Ball engine and character have separate [non-commercial restrictions](../src/vendor/emotion-ball/LICENSE).
 
 ```sh
 npm ci
@@ -140,6 +140,10 @@ npm run lint
 ```
 
 `npm test` does not require PicList. `npm run test:piclist` requires the installed `piclist` CLI and uses only synthetic files, temporary local storage, and a synthetic uploader plugin. It does not use your cloud account or upload your attachments.
+
+`npm run lint` checks plugin source and the bundled Emotion Ball JavaScript with the recommended Obsidian rules; any warning fails the check. `npm run build` also verifies the production bundle's inputs, rejects dynamic code execution detected by ESLint, checks complete third-party notices and validates release files and versions. CI and release publication both require these checks. Capability disclosures for filesystem, process and clipboard access may still appear in the community report.
+
+Dependency audit on 2026-11-01: production dependencies have no reported vulnerabilities. Compatible updates to `brace-expansion`, `fast-uri` and `js-yaml` removed three high-severity development dependency findings. The full audit still reports 23 moderate findings propagated through the development toolchain, originating in `minimatch` and the Obsidian lint tool's nested `moment`; npm reports no compatible automatic fix for those chains. They are not included in the plugin bundle. CI and release publication audit production dependencies; remaining development advisories require a separate compatible toolchain upgrade.
 
 The documentation website is a separate project: run `npm ci` and `npm run build` from `docs/site/`. Its GitHub Pages URL stays unchanged.
 

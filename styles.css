@@ -12,3 +12,120 @@
 	width: 100%;
 	max-width: 100%;
 }
+
+.mark-to-go-assistant-setting {
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.mark-to-go-assistant-setting .setting-item-info,
+.mark-to-go-assistant-setting .setting-item-control {
+	flex: 1 1 100%;
+	min-width: 0;
+	margin: 0;
+}
+
+.mark-to-go-assistant-preview {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 16px;
+	width: 100%;
+	padding: 16px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--background-secondary);
+	color: var(--text-normal);
+}
+
+.mark-to-go-assistant-stage {
+	flex: 0 0 112px;
+	margin-inline: auto;
+}
+
+.mark-to-go-assistant-stage svg {
+	display: block;
+	width: 112px;
+	height: 112px;
+	overflow: visible;
+}
+
+.mark-to-go-assistant-stage .mark-to-go-emotion-eye-hidden {
+	display: none;
+}
+
+.mark-to-go-assistant-controls {
+	flex: 1 1 230px;
+	min-width: 0;
+	text-align: left;
+}
+
+.mark-to-go-assistant-status {
+	margin: 0 0 10px;
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+}
+
+.mark-to-go-assistant-choices {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 6px;
+}
+
+.mark-to-go-assistant-choice {
+	min-width: 0;
+	min-height: 44px;
+	padding: 8px;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+.mark-to-go-assistant-choice[aria-pressed="true"] {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.mark-to-go-assistant-pause {
+	min-height: 44px;
+	margin-top: 10px;
+	font-size: var(--font-ui-small);
+}
+
+.mark-to-go-assistant-compact {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+	width: 100%;
+	color: inherit;
+}
+
+.mark-to-go-assistant-compact .mark-to-go-assistant-stage {
+	flex: 0 0 56px;
+	margin: 0;
+}
+
+.mark-to-go-assistant-compact .mark-to-go-assistant-stage svg {
+	width: 56px;
+	height: 56px;
+}
+
+.mark-to-go-assistant-compact .mark-to-go-assistant-controls {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.mark-to-go-assistant-compact .mark-to-go-assistant-status {
+	margin: 0;
+	font-size: inherit;
+	font-weight: var(--font-normal);
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+.mark-to-go-assistant-license {
+	display: block;
+	margin-top: 8px;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}

@@ -14,12 +14,15 @@ export interface UploadSession {
 	close(): Promise<void>;
 }
 
+export type ShareStage = 'checking' | 'uploading' | 'copying';
+
 export interface ShareDependencies {
 	translate?: Translator;
 	resolve(target: string): Promise<Resource | null>;
 	openUploader(): Promise<UploadSession>;
 	copy(content: string): Promise<ClipboardOutcome>;
 	progress(message: string): void;
+	stage?(stage: ShareStage): void;
 	signal?: AbortSignal;
 }
 
@@ -36,6 +39,7 @@ export async function shareMarkdown(content: string, deps: ShareDependencies): P
 		if (deps.signal?.aborted) throw new MarkToGoError('cancelled');
 	};
 	checkCancelled();
+	deps.stage?.('checking');
 	deps.progress(t('checking'));
 	const references = collectImages(content);
 	const resources = new Map<string, Resource>();
@@ -55,6 +59,8 @@ export async function shareMarkdown(content: string, deps: ShareDependencies): P
 	let uploaded = 0;
 	let reused = 0;
 	if (resources.size) {
+		checkCancelled();
+		deps.stage?.('uploading');
 		const uploader = await deps.openUploader();
 		try {
 			for (const [key, resource] of resources) {
@@ -83,6 +89,7 @@ export async function shareMarkdown(content: string, deps: ShareDependencies): P
 	let clipboardStatus: ShareResult['clipboardStatus'];
 	try {
 		checkCancelled();
+		deps.stage?.('copying');
 		clipboardStatus = await deps.copy(exported);
 	} catch {
 		clipboardStatus = 'failed';

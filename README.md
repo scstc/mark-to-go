@@ -116,4 +116,6 @@ To upload and save exports, the plugin accesses Node.js/PicList, your PicList co
 
 Build, cache behavior, limitations, and the roadmap are in the [advanced guide](docs/advanced.md). Versions follow **`YY.quarter.release-number`**: `26.4.1` means the first release in Q4 2026, followed by `26.4.2`.
 
-[0-BSD license](LICENSE). Based on the [official Obsidian sample plugin](https://github.com/obsidianmd/obsidian-sample-plugin).
+MarkToGo's own code uses the [0-BSD license](LICENSE). Based on the [official Obsidian sample plugin](https://github.com/obsidianmd/obsidian-sample-plugin).
+
+The local assistant preview includes [Emotion Ball](https://github.com/sam70361/aora-bot), pinned to `e3b6148c818da4a8e1966f2bc89cdb3cee473b73`. Its code and visuals have a separate [non-commercial license](src/vendor/emotion-ball/LICENSE) and [usage notice](src/vendor/emotion-ball/NOTICE.md); ball-character visuals are for personal technical study and research only, and cannot be used commercially. These restrictions also apply to the bundled third-party materials. The complete notices are preserved in the plugin bundle.

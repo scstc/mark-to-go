@@ -6,8 +6,13 @@ import type { Translator } from './i18n';
 import { localizeError } from './i18n';
 import { copyMarkdownFile } from './file-clipboard';
 import type { ClipboardCoordinator } from './clipboard-coordinator';
+import { createAssistant } from './assistant';
+import type { AssistantView } from './assistant';
 
 export class ShareResultModal extends Modal {
+	private assistant?: AssistantView;
+	private opened = false;
+
 	constructor(
 		app: App,
 		private readonly result: ShareResult,
@@ -22,16 +27,18 @@ export class ShareResultModal extends Modal {
 	}
 
 	onOpen(): void {
+		this.opened = true;
 		this.titleEl.setText(this.t('resultTitle'));
 		this.contentEl.createEl('p').createEl('strong', { text: this.filename });
 		this.contentEl.createEl('p', {
 			text: this.t('resultCounts', { uploaded: this.result.uploaded, reused: this.result.reused }),
 		});
-		const status = this.contentEl.createEl('p', {
-			text: this.t(this.result.clipboardStatus === 'copied' ? 'clipboardCopied' :
-				this.result.clipboardStatus === 'skipped' ? 'clipboardSkipped' : 'clipboardFailed'),
-			attr: { role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' },
-		});
+		const initialState = this.result.clipboardStatus === 'copied' ? 'copied' :
+			this.result.clipboardStatus === 'failed' ? 'error' : 'idle';
+		const assistant = createAssistant(this.contentEl, this.t, initialState, true);
+		this.assistant = assistant;
+		assistant.setState(initialState, this.t(this.result.clipboardStatus === 'copied' ? 'clipboardCopied' :
+			this.result.clipboardStatus === 'skipped' ? 'clipboardSkipped' : 'clipboardFailed'));
 		this.contentEl.createEl('p', { text: this.t('copyFileHint'), cls: 'setting-item-description' });
 		const fileStatus = this.contentEl.createEl('p', { text: this.t('notSaved') });
 		let saving = false;
@@ -46,6 +53,7 @@ export class ShareResultModal extends Modal {
 			try {
 				const path = await this.saveFile();
 				saved = true;
+				if (!this.opened) return;
 				fileStatus.empty();
 				fileStatus.createEl('code', { text: path });
 				new Setting(this.contentEl).addButton((folder) => folder.setButtonText(this.t('openFolder')).onClick(() => {
@@ -60,8 +68,10 @@ export class ShareResultModal extends Modal {
 				new Notice(localizeError(error, this.t), 12000);
 			} finally {
 				saving = false;
-				button.buttonEl.disabled = saved;
-				button.setButtonText(saved ? this.t('fileSaved') : saveLabel);
+				if (this.opened) {
+					button.buttonEl.disabled = saved;
+					button.setButtonText(saved ? this.t('fileSaved') : saveLabel);
+				}
 			}
 		}));
 		let copying = false;
@@ -72,12 +82,15 @@ export class ShareResultModal extends Modal {
 			button.setButtonText(this.t('copyMarkdown')).onClick(async () => {
 				if (copying) return;
 				const ticket = this.clipboard.claim();
+				assistant.setState('copying', this.t('copying'));
 				try {
 					const outcome = await this.clipboard.write(ticket, async () => clipboard.writeText(this.result.content));
-					status.setText(this.t(outcome === 'copied' ? 'clipboardCopied' : 'clipboardSkipped'));
+					if (!this.opened) return;
+					assistant.setState(outcome === 'copied' ? 'copied' : 'idle',
+						this.t(outcome === 'copied' ? 'clipboardCopied' : 'clipboardSkipped'));
 					fileButton.setButtonText(this.t('copyFile'));
 				} catch {
-					status.setText(this.t('clipboardRetryFailed'));
+					assistant.setState('error', this.t('clipboardRetryFailed'));
 				}
 			});
 		});
@@ -92,24 +105,32 @@ export class ShareResultModal extends Modal {
 				textButton.buttonEl.disabled = true;
 				button.buttonEl.disabled = true;
 				button.setButtonText(this.t('copyingFile'));
+				assistant.setState('copying', this.t('copyingFile'));
 				try {
 					const outcome = await this.clipboard.write(ticket,
 						(signal) => copyMarkdownFile(this.filename, this.result.content, signal));
-					status.setText(this.t(outcome === 'copied' ? 'fileClipboardCopied' : 'clipboardSkipped'));
+					if (!this.opened) return;
+					assistant.setState(outcome === 'copied' ? 'copied' : 'idle',
+						this.t(outcome === 'copied' ? 'fileClipboardCopied' : 'clipboardSkipped'));
 					button.setButtonText(this.t(outcome === 'copied' ? 'fileCopied' : 'copyFile'));
 				} catch (error) {
-					status.setText(this.t('fileClipboardFailed') + ' ' + localizeError(error, this.t));
-					button.setButtonText(this.t('copyFile'));
+					assistant.setState('error', this.t('fileClipboardFailed') + ' ' + localizeError(error, this.t));
+					if (this.opened) button.setButtonText(this.t('copyFile'));
 				} finally {
 					copying = false;
-					textButton.buttonEl.disabled = false;
-					button.buttonEl.disabled = false;
+					if (this.opened) {
+						textButton.buttonEl.disabled = false;
+						button.buttonEl.disabled = false;
+					}
 				}
 			});
 		});
 	}
 
 	onClose(): void {
+		this.opened = false;
+		this.assistant?.destroy();
+		this.assistant = undefined;
 		this.contentEl.empty();
 		this.closed();
 	}

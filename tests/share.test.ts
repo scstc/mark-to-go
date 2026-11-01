@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { shareMarkdown } from '../src/share.ts';
-import type { ShareDependencies } from '../src/share.ts';
+import type { ShareDependencies, ShareStage } from '../src/share.ts';
 
 function fixture() {
 	const uploads: string[] = [];
 	const copied: string[] = [];
+	const stages: ShareStage[] = [];
 	let opened = 0;
 	let closed = 0;
 	const deps: ShareDependencies = {
@@ -22,8 +23,9 @@ function fixture() {
 		},
 		copy: (content) => { copied.push(content); return Promise.resolve('copied'); },
 		progress: () => undefined,
+		stage: stage => { stages.push(stage); },
 	};
-	return { deps, uploads, copied, get opened() { return opened; }, get closed() { return closed; } };
+	return { deps, uploads, copied, stages, get opened() { return opened; }, get closed() { return closed; } };
 }
 
 void test('default export only copies shareable text without requiring PicList or creating a saved path', async () => {
@@ -34,6 +36,28 @@ void test('default export only copies shareable text without requiring PicList o
 	assert.deepEqual(f.copied, [content]);
 	assert.deepEqual(result, { content, uploaded: 0, reused: 0, clipboardStatus: 'copied' });
 	assert.equal('path' in result, false);
+	assert.deepEqual(f.stages, ['checking', 'copying'], 'Existing online images must not imply an upload');
+});
+
+void test('typed stages announce real work before resource checks, uploads and copying begin', async () => {
+	const f = fixture();
+	const resolve = f.deps.resolve.bind(f.deps);
+	const openUploader = f.deps.openUploader.bind(f.deps);
+	const copy = f.deps.copy.bind(f.deps);
+	f.deps.resolve = target => {
+		assert.equal(f.stages[f.stages.length - 1], 'checking');
+		return resolve(target);
+	};
+	f.deps.openUploader = () => {
+		assert.equal(f.stages[f.stages.length - 1], 'uploading');
+		return openUploader();
+	};
+	f.deps.copy = content => {
+		assert.equal(f.stages[f.stages.length - 1], 'copying');
+		return copy(content);
+	};
+	await shareMarkdown('![[image.png]]', f.deps);
+	assert.deepEqual(f.stages, ['checking', 'uploading', 'copying']);
 });
 
 void test('resolve every resource before uploading anything so missing images cannot cause partial uploads', async () => {
@@ -42,6 +66,7 @@ void test('resolve every resource before uploading anything so missing images ca
 	await assert.rejects(shareMarkdown('![[exists.png]]\n![[missing.png]]', f.deps), /missing.png/);
 	assert.equal(f.opened, 0);
 	assert.deepEqual(f.copied, []);
+	assert.deepEqual(f.stages, ['checking']);
 });
 
 void test('aliases deduplicate by resolved file while same-named files in different folders stay distinct', async () => {
@@ -71,6 +96,7 @@ void test('partial upload failure closes the session, reports completed uploads,
 	await assert.rejects(shareMarkdown('![[a.png]]\n![[b.svg]]', f.deps), /b.svg。已完成 1\/2/);
 	assert.equal(closed, true);
 	assert.deepEqual(f.copied, []);
+	assert.deepEqual(f.stages, ['checking', 'uploading'], 'Failed uploads must never show the copying stage');
 });
 
 void test('an unshareable result URL is a failed upload and cannot enter an export', async () => {
@@ -90,6 +116,15 @@ void test('clipboard failure retains prepared Markdown for a later retry or expl
 	assert.equal(result.clipboardStatus, 'failed');
 	assert.equal('path' in result, false);
 	assert.equal(result.content, '# Note');
+	assert.deepEqual(f.stages, ['checking', 'copying']);
+});
+
+void test('a superseded clipboard action remains skipped rather than being reported as a failure or success', async () => {
+	const f = fixture();
+	f.deps.copy = () => Promise.resolve('skipped');
+	const result = await shareMarkdown('# Note', f.deps);
+	assert.equal(result.clipboardStatus, 'skipped');
+	assert.deepEqual(f.stages, ['checking', 'copying']);
 });
 
 void test('cancellation before export or after upload must not replace the clipboard', async () => {
@@ -99,6 +134,7 @@ void test('cancellation before export or after upload must not replace the clipb
 	controller.abort();
 	await assert.rejects(shareMarkdown('# Note', f.deps), /取消/);
 	assert.deepEqual(f.copied, []);
+	assert.deepEqual(f.stages, []);
 	const g = fixture();
 	const duringUpload = new AbortController();
 	g.deps.signal = duringUpload.signal;
@@ -108,4 +144,15 @@ void test('cancellation before export or after upload must not replace the clipb
 	});
 	await assert.rejects(shareMarkdown('![[image.svg]]', g.deps), /取消/);
 	assert.deepEqual(g.copied, []);
+	assert.deepEqual(g.stages, ['checking', 'uploading'], 'Cancelled uploads must never show the copying stage');
+	const h = fixture();
+	const duringResolution = new AbortController();
+	h.deps.signal = duringResolution.signal;
+	h.deps.resolve = target => {
+		duringResolution.abort();
+		return Promise.resolve({ key: target, path: target });
+	};
+	await assert.rejects(shareMarkdown('![[image.svg]]', h.deps), /取消/);
+	assert.equal(h.opened, 0);
+	assert.deepEqual(h.stages, ['checking'], 'Cancellation during resource resolution must not announce or open an upload');
 });

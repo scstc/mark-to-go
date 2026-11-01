@@ -18,6 +18,8 @@ import { createTranslator, localizeError, resolveLanguage, MarkToGoError } from 
 import type { LanguageSetting, Translator } from './i18n';
 import type { Command } from 'obsidian';
 import { ClipboardCoordinator } from './clipboard-coordinator';
+import { AssistantNotice } from './assistant-notice';
+import type { AssistantState } from './assistant';
 
 export default class MarkToGoPlugin extends Plugin {
 	settings: MarkToGoSettings = { ...DEFAULT_SETTINGS };
@@ -27,6 +29,7 @@ export default class MarkToGoPlugin extends Plugin {
 	private shareCommand?: Command;
 	private readonly clipboard = new ClipboardCoordinator();
 	private readonly results = new Set<ShareResultModal>();
+	private readonly notices = new Set<AssistantNotice>();
 
 	get t(): Translator {
 		const appLanguage = requireApiVersion('1.8.7') ? getLanguage() : document.documentElement.lang || 'en';
@@ -71,6 +74,8 @@ export default class MarkToGoPlugin extends Plugin {
 		this.clipboard.dispose();
 		for (const modal of this.results) modal.close();
 		this.results.clear();
+		for (const notice of this.notices) notice.hide();
+		this.notices.clear();
 		for (const controller of this.pending.values()) controller.abort();
 		this.pending.clear();
 	}
@@ -92,6 +97,12 @@ export default class MarkToGoPlugin extends Plugin {
 	async clearUploadCache(): Promise<void> {
 		if (this.isSharing) throw new MarkToGoError('clearWhileSharing');
 		await this.uploadCache.clear();
+	}
+
+	private showAssistantNotice(message: string, state: AssistantState, duration = 0): AssistantNotice {
+		const notice = new AssistantNotice(this.t, message, state, duration, () => this.notices.delete(notice));
+		this.notices.add(notice);
+		return notice;
 	}
 
 	private async readLatest(file: TFile): Promise<string> {
@@ -132,8 +143,9 @@ export default class MarkToGoPlugin extends Plugin {
 		const ticket = this.clipboard.claim();
 		const controller = new AbortController();
 		this.pending.set(key, controller);
-		const notice = new Notice(this.t('preparing'), 0);
+		let notice: AssistantNotice | undefined;
 		try {
+			notice = this.showAssistantNotice(this.t('preparing'), 'checking');
 			const settings = { ...this.settings };
 			// Snapshot the credential with the settings; validate it only if local images need uploading.
 			let secret = '';
@@ -164,10 +176,11 @@ export default class MarkToGoPlugin extends Plugin {
 					return createCachedUploader(settings, this.uploadCache, warn, controller.signal);
 				},
 				copy: (content) => this.clipboard.write(ticket, async () => {
-					notice.setMessage(this.t('copying'));
+					notice?.updateMessage(this.t('copying'));
 					clipboard.writeText(content);
 				}),
-				progress: (message) => { if (!this.stopped) notice.setMessage(message); },
+				stage: (stage) => { if (!this.stopped) notice?.setStage(stage); },
+				progress: (message) => { if (!this.stopped) notice?.updateMessage(message); },
 				signal: controller.signal,
 			});
 			if (this.stopped) return;
@@ -184,10 +197,14 @@ export default class MarkToGoPlugin extends Plugin {
 			this.results.add(modal);
 			modal.open();
 		} catch (error) {
-			if (!this.stopped) new Notice(localizeError(error, this.t), 12000);
+			if (!this.stopped) {
+				const message = localizeError(error, this.t);
+				try { this.showAssistantNotice(message, 'error', 12000); }
+				catch { new Notice(message, 12000); }
+			}
 		} finally {
-			notice.hide();
 			this.pending.delete(key);
+			notice?.hide();
 		}
 	}
 }

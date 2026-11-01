@@ -31,4 +31,10 @@ export default defineConfig(
 		},
 	},
 	...obsidianmd.configs.recommended,
+	{
+		files: ['**/*.{js,cjs,mjs}'],
+		languageOptions: {
+			parserOptions: { projectService: false },
+		},
+	},
 );

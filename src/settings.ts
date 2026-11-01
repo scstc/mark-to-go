@@ -9,11 +9,12 @@ import { checkLocalConfiguration } from './local-configuration';
 import type { MessageKey } from './i18n';
 import type { OssOptions } from './oss-config';
 import type { S3Options } from './s3-config';
+import { renderAssistantPreview } from './assistant-preview';
 
 interface SettingRow {
 	name: string;
 	desc: string;
-	render?: (setting: Setting) => void;
+	render?: (setting: Setting) => void | (() => void);
 }
 
 export interface MarkToGoSettings extends PicListOptions, OssOptions, S3Options {
@@ -51,8 +52,11 @@ export function loadSettings(saved: Partial<MarkToGoSettings> | null | undefined
 }
 
 export class MarkToGoSettingTab extends PluginSettingTab {
+	private readonly previewCleanups = new Set<() => void>();
+
 	constructor(app: App, private readonly plugin: MarkToGoPlugin) {
 		super(app, plugin);
+		plugin.register(() => this.clearPreviews());
 	}
 
 	display(): void {
@@ -60,11 +64,21 @@ export class MarkToGoSettingTab extends PluginSettingTab {
 	}
 
 	private renderLegacy(): void {
+		this.clearPreviews();
 		this.containerEl.empty();
 		for (const row of this.rows()) {
 			const setting = new Setting(this.containerEl).setName(row.name).setDesc(row.desc);
 			row.render?.(setting);
 		}
+	}
+
+	hide(): void {
+		this.clearPreviews();
+		super.hide();
+	}
+
+	private clearPreviews(): void {
+		for (const cleanup of this.previewCleanups) cleanup();
 	}
 
 	getSettingDefinitions(): SettingDefinitionItem[] {
@@ -92,6 +106,13 @@ export class MarkToGoSettingTab extends PluginSettingTab {
 					this.refresh();
 				})); } },
 		{ name: 'MarkToGo', desc: t('instructions', { action: t('menuAction') }) + ' ' + t('disclosure') },
+		{ name: t('assistantPreviewName'), desc: t('assistantPreviewDescription'),
+			render: setting => {
+				const dispose = renderAssistantPreview(setting, t);
+				const cleanup = () => { this.previewCleanups.delete(cleanup); dispose(); };
+				this.previewCleanups.add(cleanup);
+				return cleanup;
+			} },
 		{ name: t('helpName'), desc: t('helpDescription'), render: setting => {
 			setting.addButton(button => button.setButtonText(t('openHelp')).onClick(() => this.openLink(
 				'https://scstc.github.io/mark-to-go/?lang=' + (t('helpLanguage')) + '#guide-install')));

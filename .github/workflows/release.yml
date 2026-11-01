@@ -25,7 +25,8 @@ jobs:
             - run: npm ci
             - run: npm run check:node-types
             - run: npm test
-            - run: npm run build
+            - name: Build and verify plugin artifacts
+              run: npm run build
             - run: npm run lint
     release:
         needs: windows
@@ -59,10 +60,13 @@ jobs:
                   assert.equal(json('versions.json')[manifest.version], manifest.minAppVersion);
                   NODE
             - run: npm ci
+            - name: Audit runtime dependencies
+              run: npm audit --omit=dev --registry=https://registry.npmjs.org
             - run: npm run check:node-types
             - run: npm test
             - run: npm run lint
-            - run: npm run build
+            - name: Build and verify plugin artifacts
+              run: npm run build
             - name: Attest release asset provenance
               uses: actions/attest@v4
               with:

@@ -174,6 +174,10 @@ npm run lint
 
 `npm test` 是不依赖 PicList 的自动测试；`npm run test:piclist` 要求本机已安装 `piclist` CLI，只使用临时本地存储和合成图床插件，不访问真实云端服务。
 
+`npm run lint` 使用 Obsidian 推荐规则检查插件源码和打包的 Emotion Ball JavaScript，任何警告都会使检查失败。`npm run build` 还会核对生产构建输入，阻止官网代码混入插件、检查 ESLint 能识别的动态代码执行、确认第三方完整声明及发布文件与版本一致；CI 和自动发版都必须通过这些检查。社区仍可能显示文件系统、子进程与剪贴板等实际功能对应的能力提示。原版 Emotion Ball 的[非商业许可](../src/vendor/emotion-ball/LICENSE)仍然适用，不属于 MarkToGo 第一方代码的 0-BSD 许可范围。
+
+2026-11-01 的依赖审计：运行依赖没有已报告漏洞。通过兼容更新 `brace-expansion`、`fast-uri`、`js-yaml` 消除了开发依赖的 3 项高危告警；完整审计仍有 23 项中等告警，来自 `minimatch` 及 Obsidian lint 工具嵌套的 `moment`，并沿开发工具依赖链传播，npm 未提供兼容的自动修复。这些工具依赖没有进入插件产物。CI 和发版流程会审计运行依赖；剩余开发告警需要后续兼容升级工具链，不能说所有依赖都已清零。
+
 官网是独立项目：在 `docs/site/` 中运行 `npm ci` 和 `npm run build`。GitHub Pages 的公开地址保持不变。
 
 本地安装：将构建后的 `main.js`、`manifest.json` 和 `styles.css` 复制到 `<Vault>/.obsidian/plugins/mark-to-go/`，在 Obsidian 中启用插件。开发时只重载本插件即可，无需重启 Obsidian。

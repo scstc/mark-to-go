@@ -116,4 +116,6 @@ CLI 默认的 `~/.piclist/config.json` 是另一个文件，**请使用刚才在
 
 构建方式、缓存细节、功能限制及 TODO 见[进阶说明](docs/advanced.zh-CN.md)。版本采用 **`年份后两位.季度.第几次发版`**，例如 `26.4.1` 表示 2026 年第 4 季度首次发版，同季度下一版为 `26.4.2`。
 
-使用 [0-BSD 许可证](LICENSE)，基于 [Obsidian 官方插件模板](https://github.com/obsidianmd/obsidian-sample-plugin)。
+MarkToGo 自有代码使用 [0-BSD 许可证](LICENSE)，基于 [Obsidian 官方插件模板](https://github.com/obsidianmd/obsidian-sample-plugin)。
+
+本地小助手预览接入了 [Emotion Ball](https://github.com/sam70361/aora-bot)，固定提交为 `e3b6148c818da4a8e1966f2bc89cdb3cee473b73`。其代码与视觉形象采用独立的[非商业许可](src/vendor/emotion-ball/LICENSE)和[使用声明](src/vendor/emotion-ball/NOTICE.md)；球形角色视觉仅供个人技术学习与研究，禁止商业使用。这些限制同样适用于打包后的第三方内容，完整声明保留在插件发布文件中。

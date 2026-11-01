@@ -1,0 +1,50 @@
+.emotion-demo { background: #0a1c16; border-top: 1px solid #1a3528; }
+.emotion-demo-layout { max-width: 1240px; margin: auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 60px; align-items: center; }
+.emotion-demo-eyebrow { color: var(--accent); font-size: 14px; letter-spacing: .07em; margin-bottom: 18px; }
+.emotion-demo-copy h2 { max-width: 520px; }
+.emotion-demo-intro { max-width: 410px; color: var(--muted); font-size: 18px; margin-top: 24px; }
+.emotion-demo-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: 440px; margin-top: 30px; }
+.emotion-demo-choices button { min-height: 48px; padding: 12px; display: flex; gap: 10px; align-items: center; justify-content: center; color: #d2e6da; background: #163429; font-size: 15px; transition: background .18s, color .18s; }
+.emotion-demo-choices button:hover:not(:disabled) { background: #24513d; }
+.emotion-demo-choices button[aria-pressed=true] { color: #10291c; background: var(--accent); }
+.emotion-demo-choices button:disabled { opacity: .55; }
+.emotion-choice-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .65; flex-shrink: 0; }
+.emotion-demo-local { max-width: 410px; color: var(--muted); margin-top: 18px; font-size: 14px; }
+.emotion-demo-figure { margin: 0; min-width: 0; }
+.emotion-demo-stage { position: relative; min-height: 380px; display: grid; place-items: center; }
+.emotion-stage-orbit { position: absolute; width: 85%; max-width: 380px; aspect-ratio: 1; border-radius: 50%; border: 1px solid #284f3b; transform: rotate(-20deg) scaleY(.7); pointer-events: none; }
+.emotion-ball-touch { display: block; position: relative; z-index: 1; width: min(100%, 350px); aspect-ratio: 1; padding: 0; background: transparent; border-radius: 50%; touch-action: manipulation; }
+.emotion-ball-touch:disabled { visibility: hidden; }
+.emotion-ball-touch:hover { background: #b9edcf05; }
+.emotion-ball-host { display: block; width: 100%; height: 100%; }
+.emotion-ball-host > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.emotion-demo-loading { position: absolute; z-index: 2; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 20px; color: var(--muted); text-align: center; }
+.emotion-demo-retry { min-height: 44px; padding: 10px 20px; color: #10291c; background: var(--accent); }
+.emotion-demo-caption { text-align: center; min-height: 104px; }
+.emotion-demo-caption strong { font-size: 22px; color: var(--ink); font-weight: 600; }
+.emotion-demo-caption p { font-size: 15px; color: var(--muted); margin-top: 7px; }
+.emotion-motion-state { display: inline-block; margin-top: 14px; color: #82ad96; font-size: 13px; }
+.emotion-demo-attribution { max-width: 1240px; margin: 48px auto 0; padding-top: 22px; border-top: 1px solid #1b382a; display: flex; justify-content: space-between; gap: 14px 32px; align-items: flex-start; color: var(--muted); font-size: 13px; }
+.emotion-demo-attribution p { max-width: 690px; }
+.emotion-demo-attribution > div { display: flex; gap: 8px 18px; flex-wrap: wrap; flex-shrink: 0; }
+.emotion-demo-attribution a { min-height: 44px; display: inline-flex; align-items: center; color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
+@media (max-width: 1050px) {
+  .emotion-demo-layout { gap: 32px; }
+  .emotion-demo-stage { min-height: 310px; }
+  .emotion-ball-touch { max-width: 300px; }
+  .emotion-demo-attribution { flex-direction: column; margin-top: 32px; }
+}
+@media (max-width: 700px) {
+  .emotion-demo-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .emotion-demo-intro { font-size: 17px; margin-top: 20px; }
+  .emotion-demo-choices { margin-top: 24px; gap: 8px; max-width: none; }
+  .emotion-demo-choices button { padding: 12px 6px; gap: 7px; font-size: 14px; }
+  .emotion-demo-stage { min-height: 290px; }
+  .emotion-ball-touch { max-width: 280px; }
+  .emotion-demo-caption { min-height: 98px; }
+  .emotion-demo-caption strong { font-size: 21px; }
+  .emotion-demo-attribution { margin-top: 30px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .emotion-demo-choices button { transition: none; }
+}
